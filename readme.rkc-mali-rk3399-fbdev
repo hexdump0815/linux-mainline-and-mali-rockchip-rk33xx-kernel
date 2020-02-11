@@ -17,7 +17,8 @@ export kver=5.2.0-stb-rkc+
 mkdir /lib/modules/${kver}/extra
 cp driver/product/kernel/drivers/gpu/arm/midgard/mali_kbase.ko /lib/modules/${kver}/extra
 tar czf /compile/result/stable-rk/${kver}-mali-rk3399.tar.gz /lib/modules/${kver}/extra/mali_kbase.ko
-# insmod mali_kbase.ko or depmod mali_kbase
+# clean up the extra dir for possible further pure kernel packaging
+rm -rf /lib/modules/${kver}/extra
 
 mali blob:
 
