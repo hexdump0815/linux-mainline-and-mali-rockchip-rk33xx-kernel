@@ -1,0 +1,54 @@
+rockchip rk3328:
+
+lets use LIBGL_FB=3 of gl4es and the fbdev mali blob
+(see: https://github.com/ptitSeb/gl4es/issues/119)
+==> does not seem to work, but armsoc xorg works
+
+kernel module:
+
+git clone https://github.com/LibreELEC/mali-utgard.git
+mv mali-utgard rockchip-rk3328-mali-utgard
+cd rockchip-rk3328-mali-utgard
+git checkout DX910-SW-99002-r9p0-01rel0-multiplatform
+export ARCH=arm64
+KDIR=/compile/source/linux-stable-rk USING_UMP=0 BUILD=debug MALI_DMA_BUF_MAP_ON_ATTACH=1 USING_PROFILING=0 MALI_PLATFORM=rk USING_DVFS=0 USING_DT=1 CROSS_COMPILE= make -C `pwd`/driver/src/devicedrv/mali
+export kver=5.2.0-stb-rkc+
+mkdir /lib/modules/${kver}/extra
+cp driver/src/devicedrv/mali/mali.ko /lib/modules/${kver}/extra
+tar czf /compile/result/stable-rk/${kver}-mali-rk3328.tar.gz /lib/modules/${kver}/extra/mali.ko
+# insmod mali.ko or depmod mali
+
+mali blob:
+
+git clone https://github.com/rockchip-linux/libmali.git
+mv libmali rockchip-libmali
+cd rockchip-libmali
+mkdir /opt/mali-rk3328
+cp lib/aarch64-linux-gnu/libmali-midgard-t86x-r14p0-fbdev.so /opt/mali-h6/libMali.so
+=> now do the symlinks like for all other mali setups
+
+gl4es:
+
+git clone git://github.com/ptitSeb/gl4es.git
+cd gl4es
+cmake . -DODROID=1
+make
+cp lib/libGL.so.1 /opt/mali-rk3328
+
+udev:
+
+# cat /etc/udev/rules.d/50-mali.rules
+KERNEL=="mali", MODE="0660", GROUP="video"
+KERNEL=="mali0", MODE="0660", GROUP="video"
+
+permissions:
+usermod -a -G video mrnobody
+
+to use:
+
+export LD_LIBRARY_PATH=/opt/mali-rk3328
+export LIBGL_FB=3
+es2_info
+glxinfo
+glxinfo
+glxgears

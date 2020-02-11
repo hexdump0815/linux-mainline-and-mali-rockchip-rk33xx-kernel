@@ -1,0 +1,71 @@
+INFO: based on ayufan-mainline commit f8639cacc3989a9743ed04eb3a51eb2858174a42
+
+# name: -stb-rkc + no auto
+#
+# IMPORTANT: maybe add lima and/or panfrost as modules if wanted
+# 
+
+cp /compile/doc/stable-rk/config.rkc /compile/source/linux-stable-rk/.config
+cd /compile/source/linux-stable-rk
+# ayufan changes
+patch -p1 < /compile/doc/stable-rk/misc.rkc/5.4.7-diff.patch
+# ayufan additional files
+tar xzf /compile/doc/stable-rk/misc.rkc/5.4.0-rc1-added.tar.gz
+# mali and mx10 and t9 (not yet ready - ?) tv box support
+patch -p1 < /compile/doc/stable-rk/misc.rkc/mx10-t9-mali.patch
+cp /compile/doc/stable-rk/misc.rkc/*.dts /compile/source/linux-stable-rk/arch/arm64/boot/dts/rockchip
+# set mac addr on kernel cmdline - otherwise a random one is generated
+# one subpatch seems to be no longer required with v5.3
+#patch -p1 < /compile/doc/stable/misc.av7/gen-stmmac-mac-addr-on-kernel-cmdline.patch
+patch -p1 < /compile/doc/stable/misc.av8/gen-stmmac-mac-addr-on-kernel-cmdline-v5.3.patch
+# copy additional dtb files
+cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
+
+# git pull
+export ARCH=arm64
+# make defconfig + fix options - see misc.rkc/options
+make oldconfig
+make -j 4 Image dtbs modules
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and wanted
+# find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+# make headers_install INSTALL_HDR_PATH=/usr
+cp -v .config /boot/config-${kver}
+# for rpi
+cp -v arch/arm64/boot/Image /boot/Image-${kver}
+# for s90
+mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+mkdir /boot/dtb-${kver}
+cp -v arch/arm64/boot/dts/rockchip/rk3318-*.dtb /boot/dtb-${kver}/
+cp -v arch/arm64/boot/dts/rockchip/rk3328-*.dtb /boot/dtb-${kver}/
+cp -v arch/arm64/boot/dts/rockchip/rk3368-*.dtb /boot/dtb-${kver}/
+cp -v arch/arm64/boot/dts/rockchip/rk3399-*.dtb /boot/dtb-${kver}/
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+update-initramfs -c -k ${kver}
+mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
+tar cvzf /compile/source/linux-stable-rk/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+cp -v /compile/doc/stable-rk/config.rkc /compile/doc/stable-rk/config.rkc.old
+cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc
+cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc-${kver}
+cp -v /compile/source/linux-stable-rk/*.tar.gz /compile/result/stable-rk
+cd /compile/source/linux-stable-rk
+make distclean
+rm ${kver}.tar.gz
+
+# unchecked h96max-rk3328: cat extlinux.conf
+TIMEOUT 100
+DEFAULT v547
+ 
+MENU TITLE h96max-rk3328 boot options
+
+# other possible options: no_console_suspend=1 consoleblank=0
+ 
+LABEL v547
+      MENU LABEL v5.4.7 kernel root sda3 usb
+      LINUX ../Image-5.4.7-stb-rkc+
+      INITRD ../initrd.img-5.4.7-stb-rkc+
+      FDT ../dtb-5.4.7-stb-rkc+/rk3328-evb.dtb
+      APPEND console=tty0 console=ttyS2,1500000n8 root=/dev/sda3 rootwait ro fsck.fix=yes fsck.repair=yes stmmac.macaddr=7a:3d:d0:98:96:16 net.ifnames=0 ipv6.disable=1 threadirqs noresume
