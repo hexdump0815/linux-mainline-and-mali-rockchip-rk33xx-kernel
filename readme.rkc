@@ -51,11 +51,8 @@ cp -v /compile/doc/stable-rk/config.rkc /compile/doc/stable-rk/config.rkc.old
 cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc
 cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc-${kver}
 cp -v /compile/source/linux-stable-rk/*.tar.gz /compile/result/stable-rk
-cd /compile/source/linux-stable-rk
-make distclean
-rm ${kver}.tar.gz
 
-# unchecked h96max-rk3328: cat extlinux.conf
+# cat extlinux.conf
 TIMEOUT 100
 DEFAULT v547
  
