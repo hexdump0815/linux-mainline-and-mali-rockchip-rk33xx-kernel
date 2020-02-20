@@ -11,15 +11,16 @@ cd /compile/source/linux-stable-rk
 patch -p1 < /compile/doc/stable-rk/misc.rkc/5.4.7-diff.patch
 # ayufan additional files
 tar xzf /compile/doc/stable-rk/misc.rkc/5.4.0-rc1-added.tar.gz
-# mali and mx10 and t9 (not yet ready - ?) tv box support
-patch -p1 < /compile/doc/stable-rk/misc.rkc/mx10-t9-mali.patch
-cp /compile/doc/stable-rk/misc.rkc/*.dts /compile/source/linux-stable-rk/arch/arm64/boot/dts/rockchip
+# add new dtbs to Makefile
+patch -p1 < /compile/doc/stable-rk/misc.rkc/add-new-dtbs-to-Makefile.patch
+# add sdmmc_ext for h96max rk3328
+patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patch
+# copy additional dtb files
+cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 # set mac addr on kernel cmdline - otherwise a random one is generated
 # one subpatch seems to be no longer required with v5.3
 #patch -p1 < /compile/doc/stable/misc.av7/gen-stmmac-mac-addr-on-kernel-cmdline.patch
 patch -p1 < /compile/doc/stable/misc.av8/gen-stmmac-mac-addr-on-kernel-cmdline-v5.3.patch
-# copy additional dtb files
-cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 
 # git pull
 export ARCH=arm64
