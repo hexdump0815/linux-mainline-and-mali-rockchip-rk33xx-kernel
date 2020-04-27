@@ -21,6 +21,8 @@ cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 # one subpatch seems to be no longer required with v5.3
 #patch -p1 < /compile/doc/stable/misc.av7/gen-stmmac-mac-addr-on-kernel-cmdline.patch
 patch -p1 < /compile/doc/stable/misc.av8/gen-stmmac-mac-addr-on-kernel-cmdline-v5.3.patch
+# dmc memory freq support for rk3328 - taken from armbian patches
+patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver.patch
 
 # git pull
 export ARCH=arm64
