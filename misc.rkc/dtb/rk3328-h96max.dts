@@ -453,10 +453,10 @@
 /* adjusted opp table to disable the clocks higher than 1.2ghz */
 &cpu0_opp_table {
 	opp-1296000000 {
-		status = "disabled";
+		status = "okay";
 	};
 	opp-1392000000 {
-		status = "disabled";
+		status = "okay";
 	};
 	opp-1512000000 {
 		status = "disabled";
