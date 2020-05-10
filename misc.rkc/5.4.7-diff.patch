@@ -506,13 +506,13 @@ index 31cc1541f1f5..2bb936a07867 100644
  				};
  				target: trip-point1 {
 -					temperature = <85000>;
-+					temperature = <90000>;
++					temperature = <100000>;
  					hysteresis = <2000>;
  					type = "passive";
  				};
  				soc_crit: soc-crit {
 -					temperature = <95000>;
-+					temperature = <100000>;
++					temperature = <110000>;
  					hysteresis = <2000>;
  					type = "critical";
  				};
