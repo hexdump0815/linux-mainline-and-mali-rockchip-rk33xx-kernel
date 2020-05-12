@@ -450,23 +450,40 @@
 	cpu-supply = <&vdd_arm>;
 };
 
-/* adjusted opp table to disable the 1.2ghz and higher clocks and add a 1.1ghz clock instead for the rk3318 */
+/* adjusted opp table to use slightly (25mv) higher voltages, disable the clocks equal
+   or higher than 1.2ghz and add a 1.1ghz clock instead for the rk3318 */
 &cpu0_opp_table {
+	opp-408000000 {
+		opp-microvolt = <975000>;
+	};
+	opp-600000000 {
+		opp-microvolt = <975000>;
+	};
+	opp-816000000 {
+		opp-microvolt = <1025000>;
+	};
+	opp-1008000000 {
+		opp-microvolt = <1125000>;
+	};
 	opp-1104000000 {
 		opp-hz = /bits/ 64 <1104000000>;
 		opp-microvolt = <1250000>;
 		clock-latency-ns = <40000>;
 	};
 	opp-1200000000 {
+		opp-microvolt = <1250000>;
 		status = "disabled";
 	};
 	opp-1296000000 {
+		opp-microvolt = <1325000>;
 		status = "disabled";
 	};
 	opp-1392000000 {
+		opp-microvolt = <1375000>;
 		status = "disabled";
 	};
 	opp-1512000000 {
+		opp-microvolt = <1475000>;
 		status = "disabled";
 	};
 };
