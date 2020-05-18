@@ -1,0 +1,2013 @@
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index 20aac805e197..a82d52a157d9 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -2751,6 +2751,14 @@
+ 			log everything. Information is printed at KERN_DEBUG
+ 			so loglevel=8 may also need to be specified.
+ 
++	mmc_cmdqueue= [MMC]
++			Enable or disable MMC command queue (CMDQ) support. When
++			enabled MMC driver will try to enable CMDQ for cards that
++			support it. When disabled CMDQ will not be enabled for any
++			card.
++			Format: <bool>  (1/y/on=enable, 0/n/off=disable)
++			default: enabled
++
+ 	module.sig_enforce
+ 			[KNL] When CONFIG_MODULE_SIG is set, this means that
+ 			modules without (valid) signatures will fail to load.
+diff --git a/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt b/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
+index c8c4b00ecb94..4ca357835a48 100644
+--- a/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
++++ b/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
+@@ -1,7 +1,9 @@
+ Rockchip SuperSpeed DWC3 USB SoC controller
+ 
+ Required properties:
+-- compatible:	should contain "rockchip,rk3399-dwc3" for rk3399 SoC
++- compatible:	should be one of the following:
++  - "rockchip,rk3399-dwc3": for rk3399 SoC
++  - "rockchip,rk3328-dwc3", "rockchip,rk3399-dwc3": for rk3328 SoC
+ - clocks:	A list of phandle + clock-specifier pairs for the
+ 		clocks listed in clock-names
+ - clock-names:	Should contain the following:
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+index b3c8c623744a..127ac2c1d477 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -177,6 +177,8 @@ patternProperties:
+     description: Cadence Design Systems Inc.
+   "^cdtech,.*":
+     description: CDTech(H.K.) Electronics Limited
++  "^cellwise,.*":
++    description: CellWise Microelectronics Co., Ltd
+   "^ceva,.*":
+     description: Ceva, Inc.
+   "^chipidea,.*":
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 5a5332b3591d..22f4ea65798b 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3885,6 +3885,12 @@ F:	arch/powerpc/include/uapi/asm/spu*.h
+ F:	arch/powerpc/oprofile/*cell*
+ F:	arch/powerpc/platforms/cell/
+ 
++CELLWISE CW2015 BATTERY DRIVER
++M:	Tobias Schrammm <t.schramm@manjaro.org>
++S:	Maintained
++F:	Documentation/devicetree/bindings/power/supply/cw2015_battery.yaml
++F:	drivers/power/supply/cw2015_battery.c
++
+ CEPH COMMON CODE (LIBCEPH)
+ M:	Ilya Dryomov <idryomov@gmail.com>
+ M:	Jeff Layton <jlayton@kernel.org>
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index 4e6ce2d9196e..73b3578f5b77 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -127,7 +127,7 @@ core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
+ 
+ # Default target when executing plain make
+ boot		:= arch/arm64/boot
+-KBUILD_IMAGE	:= $(boot)/Image.gz
++KBUILD_IMAGE	:= $(boot)/Image
+ 
+ all:	Image.gz
+ 
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
+index baa6f08dc108..e24acc076008 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
+@@ -41,6 +41,11 @@
+ 		};
+ 	};
+ 
++	aliases {
++		// This allows setting ethaddr from u-boot command line
++		ethernet0 = &emac;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 60d9437096c7..ae7621309e92 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -28,6 +28,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopc-t4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-m4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-neo4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-orangepi.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-pinebook-pro.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-puma-haikou.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-roc-pc.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-roc-pc-mezzanine.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+index 62936b432f9a..d873c17510e9 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+@@ -11,9 +11,36 @@
+ 	compatible = "pine64,rock64", "rockchip,rk3328";
+ 
+ 	chosen {
++		bootargs = "earlycon=uart8250,mmio32,0xff130000";
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
++	leds {
++		compatible = "gpio-leds";
++
++		standby-led {
++			linux,default-trigger = "disk-activity";
++			gpios = <&rk805 0 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		power-led {
++			gpios = <&rk805 1 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		usb-switch {
++			linux,default-trigger = "none";
++			gpios = <&gpio0 2 1>;
++			mode = <0x23>;
++			default-state = "on";
++		};
++	};
++
+ 	gmac_clkin: external-gmac-clock {
+ 		compatible = "fixed-clock";
+ 		clock-frequency = <125000000>;
+@@ -45,7 +72,8 @@
+ 
+ 	vcc_host1_5v: vcc_otg_5v: vcc-host1-5v-regulator {
+ 		compatible = "regulator-fixed";
+-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
++		enable-active-high;
++		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&usb20_host_drv>;
+ 		regulator-name = "vcc_host1_5v";
+@@ -87,7 +115,8 @@
+ 	sound {
+ 		compatible = "audio-graph-card";
+ 		label = "rockchip,rk3328";
+-		dais = <&i2s1_p0
++		dais = <&i2s0_p0
++			&i2s1_p0
+ 			&spdif_p0>;
+ 	};
+ 
+@@ -130,15 +159,19 @@
+ };
+ 
+ &emmc {
++	max-frequency = <200000000>;
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
+ 	mmc-hs200-1_8v;
+ 	non-removable;
++	num-slots = <1>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&emmc_clk &emmc_cmd &emmc_bus8>;
+-	vmmc-supply = <&vcc_io>;
+-	vqmmc-supply = <&vcc18_emmc>;
+ 	status = "okay";
++	supports-emmc;
++	clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
++	         <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
++	clock-names = "biu", "ciu", "ciu-drv", "ciu-sample";
+ };
+ 
+ &gmac2io {
+@@ -160,6 +193,12 @@
+ 
+ &hdmi {
+ 	status = "okay";
++
++	port@0 {
++		hdmi_p0_0: endpoint {
++			remote-endpoint = <&i2s0_p0_0>;
++		};
++	};
+ };
+ 
+ &hdmiphy {
+@@ -277,6 +316,18 @@
+ 	};
+ };
+ 
++&i2s0 {
++	status = "okay";
++
++	i2s0_p0: port {
++		i2s0_p0_0: endpoint {
++			dai-format = "i2s";
++			mclk-fs = <256>;
++			remote-endpoint = <&hdmi_p0_0>;
++		};
++	};
++};
++
+ &i2s1 {
+ 	status = "okay";
+ 
+@@ -325,11 +376,14 @@
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
++	cd-gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
+ 	disable-wp;
+ 	max-frequency = <150000000>;
++	num-slots = <1>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_dectn &sdmmc0_bus4>;
+ 	vmmc-supply = <&vcc_sd>;
++	vqmmc-supply = <&vcc_sd>;
+ 	status = "okay";
+ };
+ 
+@@ -348,11 +402,23 @@
+ 	status = "okay";
+ 
+ 	spiflash@0 {
+-		compatible = "jedec,spi-nor";
++		compatible = "gigadevice,gd25q128", "jedec,spi-nor";
+ 		reg = <0>;
++		m25p,fast-read;
+ 
+ 		/* maximum speed for Rockchip SPI */
+ 		spi-max-frequency = <50000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x8000 0x3F0000>;
++			};
++		};
+ 	};
+ };
+ 
+@@ -368,14 +434,14 @@
+ 
+ &u2phy {
+ 	status = "okay";
++};
+ 
+-	u2phy_host: host-port {
+-		status = "okay";
+-	};
++&u2phy_host {
++	status = "okay";
++};
+ 
+-	u2phy_otg: otg-port {
+-		status = "okay";
+-	};
++&u2phy_otg {
++	status = "okay";
+ };
+ 
+ &usb20_otg {
+@@ -398,3 +464,42 @@
+ &vop_mmu {
+ 	status = "okay";
+ };
++
++&usbdrd3 {
++	status = "okay";
++};
++
++&usbdrd_dwc3 {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++
++	/* SPI DMA does not work currently */
++	/delete-property/ dmas;
++	/delete-property/ #dma-cells;
++	/delete-property/ dma-names;
++
++	 spi-flash@0 {
++		#address-cells = <0x1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		reg = <0x0>;
++		spi-max-frequency = <25000000>;
++		status = "okay";
++		m25p,fast-read;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x8000 0x3F0000>;
++			};
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328.dtsi b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+index 1f53ead52c7f..63ee80c37b71 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3328.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+@@ -27,6 +27,8 @@
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		mmc0 = &emmc;
++		mmc1 = &sdmmc;
+ 		ethernet0 = &gmac2io;
+ 		ethernet1 = &gmac2phy;
+ 	};
+@@ -854,12 +856,12 @@
+ 		};
+ 	};
+ 
+-	sdmmc: mmc@ff500000 {
++	emmc: mmc@ff520000 {
+ 		compatible = "rockchip,rk3328-dw-mshc", "rockchip,rk3288-dw-mshc";
+-		reg = <0x0 0xff500000 0x0 0x4000>;
+-		interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cru HCLK_SDMMC>, <&cru SCLK_SDMMC>,
+-			 <&cru SCLK_SDMMC_DRV>, <&cru SCLK_SDMMC_SAMPLE>;
++		reg = <0x0 0xff520000 0x0 0x4000>;
++		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
++			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
+ 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
+ 		fifo-depth = <0x100>;
+ 		max-frequency = <150000000>;
+@@ -878,12 +880,12 @@
+ 		status = "disabled";
+ 	};
+ 
+-	emmc: mmc@ff520000 {
++	sdmmc: mmc@ff500000 {
+ 		compatible = "rockchip,rk3328-dw-mshc", "rockchip,rk3288-dw-mshc";
+-		reg = <0x0 0xff520000 0x0 0x4000>;
+-		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
+-			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
++		reg = <0x0 0xff500000 0x0 0x4000>;
++		interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_SDMMC>, <&cru SCLK_SDMMC>,
++			 <&cru SCLK_SDMMC_DRV>, <&cru SCLK_SDMMC_SAMPLE>;
+ 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
+ 		fifo-depth = <0x100>;
+ 		max-frequency = <150000000>;
+@@ -985,6 +987,33 @@
+ 		status = "disabled";
+ 	};
+ 
++	usbdrd3: usb@ff600000 {
++		compatible = "rockchip,rk3328-dwc3", "rockchip,rk3399-dwc3";
++		clocks = <&cru SCLK_USB3OTG_REF>, <&cru SCLK_USB3OTG_SUSPEND>,
++			 <&cru ACLK_USB3OTG>;
++		clock-names = "ref_clk", "suspend_clk",
++			      "bus_clk";
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++		status = "disabled";
++
++		usbdrd_dwc3: dwc3@ff600000 {
++			compatible = "snps,dwc3";
++			reg = <0x0 0xff600000 0x0 0x100000>;
++			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++			dr_mode = "otg";
++			phy_type = "utmi_wide";
++			snps,dis_enblslpm_quirk;
++			snps,dis-u2-freeclk-exists-quirk;
++			snps,dis_u2_susphy_quirk;
++			snps,dis_u3_susphy_quirk;
++			snps,dis-del-phy-power-chg-quirk;
++			snps,dis-tx-ipgap-linecheck-quirk;
++			status = "disabled";
++		};
++	};
++
+ 	gic: interrupt-controller@ff811000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dts b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dts
+index 4b42717800f7..e1212a790c3a 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dts
+@@ -27,4 +27,10 @@
+ 			};
+ 		};
+ 	};
++
++	i2s0 {
++		i2s_8ch_mclk: i2s-8ch-mclk {
++			rockchip,pins = <4 0 RK_FUNC_1 &pcfg_pull_none>;
++		};
++	};
+ };
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
+index 9bca25801260..bbd92c9d5ed8 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
+@@ -11,6 +11,7 @@
+ 
+ / {
+ 	chosen {
++		bootargs = "earlycon=uart8250,mmio32,0xff1a0000";
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
+@@ -58,7 +59,8 @@
+ 		compatible = "pwm-fan";
+ 		#cooling-cells = <2>;
+ 		fan-supply = <&vcc12v_dcin>;
+-		pwms = <&pwm1 0 50000 0>;
++		pwms = <&pwm1 0 10000 0>;
++		cooling-levels = <0 80 170 230>;
+ 	};
+ 
+ 	sdio_pwrseq: sdio-pwrseq {
+@@ -530,6 +532,7 @@
+ 	pinctrl-0 = <&pcie_perst>;
+ 	vpcie12v-supply = <&vcc12v_dcin>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
++	bus-scan-delay-ms = <1000>;
+ 	status = "okay";
+ };
+ 
+@@ -678,6 +681,27 @@
+ 		compatible = "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <10000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x0 0x3F8000>;
++			};
++
++			env@3f8000 {
++				label = "env";
++				reg = <0x3F8000 0x8000>;
++			};
++
++			vendor@7c0000 {
++				label = "vendor";
++				reg = <0x7C0000 0x40000>;
++			};
++		};
+ 	};
+ };
+ 
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399.dtsi b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+index 33cc21fcf4c1..8b27092154c2 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include <dt-bindings/power/rk3399-power.h>
++#include <dt-bindings/suspend/rockchip-rk3399.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -790,7 +791,7 @@
+ 				};
+ 			};
+ 
+-			cooling-maps {
++			cooling_maps: cooling-maps {
+ 				map0 {
+ 					trip = <&cpu_alert0>;
+ 					cooling-device =
+@@ -2661,4 +2662,27 @@
+ 		};
+ 
+ 	};
++
++	rockchip_suspend: rockchip-suspend {
++		compatible = "rockchip,pm-rk3399";
++		status = "disabled";
++		rockchip,sleep-debug-en = <0>;
++		rockchip,virtual-poweroff = <0>;
++		rockchip,sleep-mode-config = <
++			(0
++			| RKPM_SLP_ARMPD
++			| RKPM_SLP_PERILPPD
++			| RKPM_SLP_DDR_RET
++			| RKPM_SLP_PLLPD
++			| RKPM_SLP_OSC_DIS
++			| RKPM_SLP_CENTER_PD
++			| RKPM_SLP_AP_PWROFF
++			)
++		>;
++		rockchip,wakeup-config = <
++			(0
++			| RKPM_GPIO_WKUP_EN
++			)
++		>;
++	};
+ };
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 4db223dbc549..abe2fd50442d 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -829,6 +829,7 @@ CONFIG_PHY_RCAR_GEN3_USB3=m
+ CONFIG_PHY_ROCKCHIP_EMMC=y
+ CONFIG_PHY_ROCKCHIP_INNO_HDMI=m
+ CONFIG_PHY_ROCKCHIP_INNO_USB2=y
++CONFIG_PHY_ROCKCHIP_INNO_HDMI=m
+ CONFIG_PHY_ROCKCHIP_PCIE=m
+ CONFIG_PHY_ROCKCHIP_TYPEC=y
+ CONFIG_PHY_UNIPHIER_USB2=y
+diff --git a/drivers/bluetooth/hci_bcm.c b/drivers/bluetooth/hci_bcm.c
+index b236cb11c0dc..4c0b79393ced 100644
+--- a/drivers/bluetooth/hci_bcm.c
++++ b/drivers/bluetooth/hci_bcm.c
+@@ -1472,6 +1472,23 @@ static void bcm_serdev_remove(struct serdev_device *serdev)
+ 	hci_uart_unregister_device(&bcmdev->serdev_hu);
+ }
+ 
++static void bcm_serdev_shutdown(struct serdev_device *serdev)
++{
++	struct bcm_device *bcmdev = serdev_device_get_drvdata(serdev);
++
++/*
++	if (test_bit(HCI_UART_REGISTERED, &bcmdev->hu->flags)) {
++		hci_uart_unregister_device(&bcmdev->serdev_hu);
++	}
++*/
++	dev_info(bcmdev->dev, "Cutting power to bluetooth module\n");
++	if (bcm_gpio_set_power(bcmdev, false)) {
++		dev_err(bcmdev->dev, "Failed to power down\n");
++	}
++	usleep_range(500000, 1000000);
++}
++
++
+ #ifdef CONFIG_OF
+ static struct bcm_device_data bcm4354_device_data = {
+ 	.no_early_set_baudrate = true,
+@@ -1497,6 +1514,7 @@ MODULE_DEVICE_TABLE(of, bcm_bluetooth_of_match);
+ static struct serdev_device_driver bcm_serdev_driver = {
+ 	.probe = bcm_serdev_probe,
+ 	.remove = bcm_serdev_remove,
++	.shutdown = bcm_serdev_shutdown,
+ 	.driver = {
+ 		.name = "hci_uart_bcm",
+ 		.of_match_table = of_match_ptr(bcm_bluetooth_of_match),
+diff --git a/drivers/bluetooth/hci_serdev.c b/drivers/bluetooth/hci_serdev.c
+index 4652896d4990..72270f01e580 100644
+--- a/drivers/bluetooth/hci_serdev.c
++++ b/drivers/bluetooth/hci_serdev.c
+@@ -364,5 +364,7 @@ void hci_uart_unregister_device(struct hci_uart *hu)
+ 
+ 	hu->proto->close(hu);
+ 	serdev_device_close(hu->serdev);
++
++	clear_bit(HCI_UART_REGISTERED, &hu->flags);
+ }
+ EXPORT_SYMBOL_GPL(hci_uart_unregister_device);
+diff --git a/drivers/clk/rockchip/clk-rk3399.c b/drivers/clk/rockchip/clk-rk3399.c
+index ce1d2446f142..ba49210bf4ee 100644
+--- a/drivers/clk/rockchip/clk-rk3399.c
++++ b/drivers/clk/rockchip/clk-rk3399.c
+@@ -99,6 +99,7 @@ static struct rockchip_pll_rate_table rk3399_pll_rates[] = {
+ 	RK3036_PLL_RATE(  74250000, 2, 99, 4, 4, 1, 0),
+ 	RK3036_PLL_RATE(  65000000, 1, 65, 6, 4, 1, 0),
+ 	RK3036_PLL_RATE(  54000000, 1, 54, 6, 4, 1, 0),
++	RK3036_PLL_RATE(  32000000, 3, 112, 7, 4, 0, 0),
+ 	RK3036_PLL_RATE(  27000000, 1, 27, 6, 4, 1, 0),
+ 	{ /* sentinel */ },
+ };
+diff --git a/drivers/firmware/Kconfig b/drivers/firmware/Kconfig
+index ea869addc89b..670ab25ea0fa 100644
+--- a/drivers/firmware/Kconfig
++++ b/drivers/firmware/Kconfig
+@@ -298,6 +298,13 @@ config TURRIS_MOX_RWTM
+ config HAVE_ARM_SMCCC
+ 	bool
+ 
++config ROCKCHIP_SIP
++	bool "Rockchip SIP interface"
++	depends on ARM64 && ARM_PSCI_FW
++	help
++	  Say Y here if you want to enable SIP callbacks for Rockchip platforms
++	  This option enables support for communicating with the ATF.
++
+ source "drivers/firmware/psci/Kconfig"
+ source "drivers/firmware/broadcom/Kconfig"
+ source "drivers/firmware/google/Kconfig"
+diff --git a/drivers/firmware/Makefile b/drivers/firmware/Makefile
+index e9fb838af4df..575f45d55939 100644
+--- a/drivers/firmware/Makefile
++++ b/drivers/firmware/Makefile
+@@ -29,6 +29,7 @@ obj-y				+= meson/
+ obj-$(CONFIG_GOOGLE_FIRMWARE)	+= google/
+ obj-$(CONFIG_EFI)		+= efi/
+ obj-$(CONFIG_UEFI_CPER)		+= efi/
++obj-$(CONFIG_ROCKCHIP_SIP)	+= rockchip_sip.o
+ obj-y				+= imx/
+ obj-y				+= tegra/
+ obj-y				+= xilinx/
+diff --git a/drivers/gpu/drm/bridge/analogix/analogix-anx78xx.c b/drivers/gpu/drm/bridge/analogix/analogix-anx78xx.c
+index 864423f59d66..432256e51484 100644
+--- a/drivers/gpu/drm/bridge/analogix/analogix-anx78xx.c
++++ b/drivers/gpu/drm/bridge/analogix/analogix-anx78xx.c
+@@ -604,6 +604,7 @@ static int anx78xx_init_pdata(struct anx78xx *anx78xx)
+ static int anx78xx_dp_link_training(struct anx78xx *anx78xx)
+ {
+ 	u8 dp_bw, dpcd[2];
++	unsigned int max_link_rate;
+ 	int err;
+ 
+ 	err = regmap_write(anx78xx->map[I2C_IDX_RX_P0], SP_HDMI_MUTE_CTRL_REG,
+diff --git a/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c b/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
+index 7f56d8c3491d..6124e2bbee05 100644
+--- a/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
++++ b/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
+@@ -83,6 +83,12 @@ static const struct dw_hdmi_mpll_config rockchip_mpll_cfg[] = {
+ 			{ 0x2153, 0x0000},
+ 			{ 0x40f3, 0x0000}
+ 		},
++	}, {
++		32000000, {
++			{ 0x0072, 0x0001},
++			{ 0x2153, 0x0000},
++			{ 0x40f3, 0x0000}
++		},
+ 	}, {
+ 		36000000, {
+ 			{ 0x00b3, 0x0000},
+diff --git a/drivers/leds/led-core.c b/drivers/leds/led-core.c
+index f1f718dbe0f8..f174611e869f 100644
+--- a/drivers/leds/led-core.c
++++ b/drivers/leds/led-core.c
+@@ -175,6 +175,7 @@ static void led_blink_setup(struct led_classdev *led_cdev,
+ 		     unsigned long *delay_off)
+ {
+ 	if (!test_bit(LED_BLINK_ONESHOT, &led_cdev->work_flags) &&
++	    !test_bit(LED_BLINK_INVERT, &led_cdev->work_flags) &&
+ 	    led_cdev->blink_set &&
+ 	    !led_cdev->blink_set(led_cdev, delay_on, delay_off))
+ 		return;
+diff --git a/drivers/leds/led-triggers.c b/drivers/leds/led-triggers.c
+index 79e30d2cb7a5..c40c58c6e345 100644
+--- a/drivers/leds/led-triggers.c
++++ b/drivers/leds/led-triggers.c
+@@ -27,14 +27,80 @@ LIST_HEAD(trigger_list);
+ 
+  /* Used by LED Class */
+ 
++#define TRIGGER_INVERT_SUFFIX "-inverted"
++
++/*
++ * Check suffix of trigger name agains TRIGGER_INVERT_SUFFIX
++ */
++static bool led_trigger_is_inverted(const char *trigname)
++{
++	if (strlen(trigname) >= strlen(TRIGGER_INVERT_SUFFIX)) {
++		return !strcmp(trigname + strlen(trigname) -
++				 strlen(TRIGGER_INVERT_SUFFIX),
++				TRIGGER_INVERT_SUFFIX);
++	}
++
++	return false;
++}
++
++/*
++ * Get length of trigger name name without TRIGGER_INVERT_SUFFIX
++ */
++static size_t led_trigger_get_name_len(const char *trigname)
++{
++	// Subtract length of TRIGGER_INVERT_SUFFIX if trigger is inverted
++	if (led_trigger_is_inverted(trigname))
++		return strlen(trigname) - strlen(TRIGGER_INVERT_SUFFIX);
++	return strlen(trigname);
++}
++
++/*
++ * Find and set led trigger by name
++ */
++static int led_trigger_set_str_(struct led_classdev *led_cdev,
++			       const char *trigname, bool lock)
++{
++	struct led_trigger *trig;
++	bool inverted = led_trigger_is_inverted(trigname);
++	size_t len = led_trigger_get_name_len(trigname);
++
++	down_read(&triggers_list_lock);
++	list_for_each_entry(trig, &trigger_list, next_trig) {
++		/* Compare trigger name without inversion suffix */
++		if (strlen(trig->name) == len &&
++		    !strncmp(trigname, trig->name, len)) {
++			if (lock)
++				down_write(&led_cdev->trigger_lock);
++			led_trigger_set(led_cdev, trig);
++			if (inverted)
++				led_cdev->flags |= LED_INVERT_TRIGGER;
++			else
++				led_cdev->flags &= ~LED_INVERT_TRIGGER;
++			if (lock)
++				up_write(&led_cdev->trigger_lock);
++
++			up_read(&triggers_list_lock);
++			return 0;
++		}
++	}
++	/* we come here only if trigname matches no trigger */
++	up_read(&triggers_list_lock);
++	return -EINVAL;
++}
++
++#define led_trigger_set_str(cdev, name) led_trigger_set_str_(cdev, name, true)
++#define led_trigger_set_str_unlocked(cdev, name) \
++		led_trigger_set_str_(cdev, name, false)
++
++
+ ssize_t led_trigger_write(struct file *filp, struct kobject *kobj,
+ 			  struct bin_attribute *bin_attr, char *buf,
+ 			  loff_t pos, size_t count)
+ {
+ 	struct device *dev = kobj_to_dev(kobj);
+ 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+-	struct led_trigger *trig;
+ 	int ret = count;
++	char *name;
+ 
+ 	mutex_lock(&led_cdev->led_access);
+ 
+@@ -48,20 +114,10 @@ ssize_t led_trigger_write(struct file *filp, struct kobject *kobj,
+ 		goto unlock;
+ 	}
+ 
+-	down_read(&triggers_list_lock);
+-	list_for_each_entry(trig, &trigger_list, next_trig) {
+-		if (sysfs_streq(buf, trig->name)) {
+-			down_write(&led_cdev->trigger_lock);
+-			led_trigger_set(led_cdev, trig);
+-			up_write(&led_cdev->trigger_lock);
+-
+-			up_read(&triggers_list_lock);
+-			goto unlock;
+-		}
+-	}
+-	/* we come here only if buf matches no trigger */
+-	ret = -EINVAL;
+-	up_read(&triggers_list_lock);
++	name = strim(buf);
++	ret = led_trigger_set_str(led_cdev, name);
++	if (!ret)
++		ret = count;
+ 
+ unlock:
+ 	mutex_unlock(&led_cdev->led_access);
+@@ -93,12 +149,22 @@ static int led_trigger_format(char *buf, size_t size,
+ 				       led_cdev->trigger ? "none" : "[none]");
+ 
+ 	list_for_each_entry(trig, &trigger_list, next_trig) {
+-		bool hit = led_cdev->trigger &&
+-			!strcmp(led_cdev->trigger->name, trig->name);
++		bool hit = led_cdev->trigger == trig;
++		bool inverted = led_cdev->flags & LED_INVERT_TRIGGER;
++
++		/* print non-inverted trigger */
++		len += led_trigger_snprintf(buf + len, size - len,
++					    " %s%s%s",
++					    hit && !inverted ? "[" : "",
++					    trig->name,
++					    hit && !inverted ? "]" : "");
+ 
++		/* print inverted trigger */
+ 		len += led_trigger_snprintf(buf + len, size - len,
+-					    " %s%s%s", hit ? "[" : "",
+-					    trig->name, hit ? "]" : "");
++					    " %s%s"TRIGGER_INVERT_SUFFIX"%s",
++					    hit && inverted ? "[" : "",
++					    trig->name,
++					    hit && inverted ? "]" : "");
+ 	}
+ 
+ 	len += led_trigger_snprintf(buf + len, size - len, "\n");
+@@ -235,21 +301,15 @@ EXPORT_SYMBOL_GPL(led_trigger_remove);
+ 
+ void led_trigger_set_default(struct led_classdev *led_cdev)
+ {
+-	struct led_trigger *trig;
++	bool found;
+ 
+ 	if (!led_cdev->default_trigger)
+ 		return;
+ 
+ 	down_read(&triggers_list_lock);
+-	down_write(&led_cdev->trigger_lock);
+-	list_for_each_entry(trig, &trigger_list, next_trig) {
+-		if (!strcmp(led_cdev->default_trigger, trig->name)) {
+-			led_cdev->flags |= LED_INIT_DEFAULT_TRIGGER;
+-			led_trigger_set(led_cdev, trig);
+-			break;
+-		}
+-	}
+-	up_write(&led_cdev->trigger_lock);
++	found = !led_trigger_set_str(led_cdev, led_cdev->default_trigger);
++	if (found)
++		led_cdev->flags |= LED_INIT_DEFAULT_TRIGGER;
+ 	up_read(&triggers_list_lock);
+ }
+ EXPORT_SYMBOL_GPL(led_trigger_set_default);
+@@ -292,11 +352,14 @@ int led_trigger_register(struct led_trigger *trig)
+ 	/* Register with any LEDs that have this as a default trigger */
+ 	down_read(&leds_list_lock);
+ 	list_for_each_entry(led_cdev, &leds_list, node) {
++		bool found;
++
+ 		down_write(&led_cdev->trigger_lock);
+-		if (!led_cdev->trigger && led_cdev->default_trigger &&
+-			    !strcmp(led_cdev->default_trigger, trig->name)) {
+-			led_cdev->flags |= LED_INIT_DEFAULT_TRIGGER;
+-			led_trigger_set(led_cdev, trig);
++		if (!led_cdev->trigger && led_cdev->default_trigger) {
++			found = !led_trigger_set_str_unlocked(led_cdev,
++					led_cdev->default_trigger);
++			if (found)
++				led_cdev->flags |= LED_INIT_DEFAULT_TRIGGER;
+ 		}
+ 		up_write(&led_cdev->trigger_lock);
+ 	}
+@@ -369,8 +432,14 @@ void led_trigger_event(struct led_trigger *trig,
+ 		return;
+ 
+ 	read_lock(&trig->leddev_list_lock);
+-	list_for_each_entry(led_cdev, &trig->led_cdevs, trig_list)
+-		led_set_brightness(led_cdev, brightness);
++	list_for_each_entry(led_cdev, &trig->led_cdevs, trig_list) {
++		/* Reverse brightness if LED is inverted */
++		if (led_cdev->flags & LED_INVERT_TRIGGER)
++			led_set_brightness(led_cdev,
++				led_cdev->max_brightness - brightness);
++		else
++			led_set_brightness(led_cdev, brightness);
++	}
+ 	read_unlock(&trig->leddev_list_lock);
+ }
+ EXPORT_SYMBOL_GPL(led_trigger_event);
+@@ -388,10 +457,13 @@ static void led_trigger_blink_setup(struct led_trigger *trig,
+ 
+ 	read_lock(&trig->leddev_list_lock);
+ 	list_for_each_entry(led_cdev, &trig->led_cdevs, trig_list) {
+-		if (oneshot)
++		bool trigger_inverted =
++			!!(led_cdev->flags & LED_INVERT_TRIGGER);
++		if (oneshot) {
++			/* use logical xnor to determine inversion parameter */
+ 			led_blink_set_oneshot(led_cdev, delay_on, delay_off,
+-					      invert);
+-		else
++					      (!!invert) == trigger_inverted);
++		} else
+ 			led_blink_set(led_cdev, delay_on, delay_off);
+ 	}
+ 	read_unlock(&trig->leddev_list_lock);
+diff --git a/drivers/mfd/rk808.c b/drivers/mfd/rk808.c
+index a69a6742ecdc..d6350b7b68dc 100644
+--- a/drivers/mfd/rk808.c
++++ b/drivers/mfd/rk808.c
+@@ -514,15 +514,26 @@ static void rk8xx_syscore_shutdown(void)
+ 	struct rk808 *rk808 = i2c_get_clientdata(rk808_i2c_client);
+ 	int ret;
+ 
+-	if (system_state == SYSTEM_POWER_OFF &&
+-	    (rk808->variant == RK809_ID || rk808->variant == RK817_ID)) {
+-		ret = regmap_update_bits(rk808->regmap,
+-					 RK817_SYS_CFG(3),
+-					 RK817_SLPPIN_FUNC_MSK,
+-					 SLPPIN_DN_FUN);
+-		if (ret) {
+-			dev_warn(&rk808_i2c_client->dev,
+-				 "Cannot switch to power down function\n");
++	if (system_state == SYSTEM_POWER_OFF) {
++		switch(rk808->variant) {
++		case RK809_ID:
++		case RK817_ID:
++			ret = regmap_update_bits(rk808->regmap,
++						 RK817_SYS_CFG(3),
++						 RK817_SLPPIN_FUNC_MSK,
++						 SLPPIN_DN_FUN);
++			if (ret) {
++				dev_warn(&rk808_i2c_client->dev,
++					 "Cannot switch to power down function\n");
++			}
++			break;
++		case RK808_ID:
++			if(rk808->use_syscore_powerdown) {
++				rk808_device_shutdown();
++			}
++			break;
++		default:
++			break;
+ 		}
+ 	}
+ }
+@@ -605,6 +616,7 @@ static int rk808_probe(struct i2c_client *client,
+ 		cells = rk808s;
+ 		nr_cells = ARRAY_SIZE(rk808s);
+ 		rk808->pm_pwroff_fn = rk808_device_shutdown;
++		register_syscore_ops(&rk808_syscore_ops);
+ 		break;
+ 	case RK818_ID:
+ 		rk808->regmap_cfg = &rk818_regmap_config;
+@@ -676,9 +688,13 @@ static int rk808_probe(struct i2c_client *client,
+ 
+ 	pm_off = of_property_read_bool(np,
+ 				"rockchip,system-power-controller");
+-	if (pm_off && !pm_power_off) {
+-		rk808_i2c_client = client;
+-		pm_power_off = rk808->pm_pwroff_fn;
++	if (pm_off) {
++		if (pm_power_off) {
++			rk808->use_syscore_powerdown = true;
++		} else {
++			rk808_i2c_client = client;
++			pm_power_off = rk808->pm_pwroff_fn;
++		}
+ 	}
+ 
+ 	if (pm_off && !pm_power_off_prepare) {
+diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
+index de14b5845f52..e28a95247eae 100644
+--- a/drivers/mmc/core/mmc.c
++++ b/drivers/mmc/core/mmc.c
+@@ -6,7 +6,7 @@
+  *  Copyright (C) 2005-2007 Pierre Ossman, All Rights Reserved.
+  *  MMCv4 support Copyright (C) 2006 Philip Langdale, All Rights Reserved.
+  */
+-
++#include <linux/moduleparam.h>
+ #include <linux/err.h>
+ #include <linux/of.h>
+ #include <linux/slab.h>
+@@ -62,6 +62,10 @@ static const unsigned int taac_mant[] = {
+ 		__res & __mask;						\
+ 	})
+ 
++/* Enable / disable command queue support */
++static bool mmc_cmdqueue_support = true;
++core_param(mmc_cmdqueue, mmc_cmdqueue_support, bool, S_IRUGO);
++
+ /*
+  * Given the decoded CSD structure, decode the raw CID to our CID structure.
+  */
+@@ -1833,15 +1837,20 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
+ 	 */
+ 	card->ext_csd.cmdq_en = false;
+ 	if (card->ext_csd.cmdq_support && host->caps2 & MMC_CAP2_CQE) {
+-		err = mmc_cmdq_enable(card);
+-		if (err && err != -EBADMSG)
+-			goto free_card;
+-		if (err) {
+-			pr_warn("%s: Enabling CMDQ failed\n",
+-				mmc_hostname(card->host));
+-			card->ext_csd.cmdq_support = false;
+-			card->ext_csd.cmdq_depth = 0;
+-			err = 0;
++		if (mmc_cmdqueue_support) {
++			err = mmc_cmdq_enable(card);
++			if (err && err != -EBADMSG)
++				 goto free_card;
++			if (err) {
++				pr_warn("%s: Enabling CMDQ failed\n",
++					mmc_hostname(card->host));
++				card->ext_csd.cmdq_support = false;
++				card->ext_csd.cmdq_depth = 0;
++				err = 0;
++			}
++		} else {
++			pr_info("%s: CMDQ support disabled in kernel\n",
++				mmc_hostname(host));
+ 		}
+ 	}
+ 	/*
+diff --git a/drivers/mmc/core/pwrseq_simple.c b/drivers/mmc/core/pwrseq_simple.c
+index ea4d3670560e..38fe7e29aba6 100644
+--- a/drivers/mmc/core/pwrseq_simple.c
++++ b/drivers/mmc/core/pwrseq_simple.c
+@@ -80,10 +80,8 @@ static void mmc_pwrseq_simple_post_power_on(struct mmc_host *host)
+ 		msleep(pwrseq->post_power_on_delay_ms);
+ }
+ 
+-static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
++static void __mmc_pwrseq_simple_power_off(struct mmc_pwrseq_simple *pwrseq)
+ {
+-	struct mmc_pwrseq_simple *pwrseq = to_pwrseq_simple(host->pwrseq);
+-
+ 	mmc_pwrseq_simple_set_gpios_value(pwrseq, 1);
+ 
+ 	if (pwrseq->power_off_delay_us)
+@@ -96,6 +94,12 @@ static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
+ 	}
+ }
+ 
++static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
++{
++	struct mmc_pwrseq_simple *pwrseq = to_pwrseq_simple(host->pwrseq);
++	__mmc_pwrseq_simple_power_off(pwrseq);
++}
++
+ static const struct mmc_pwrseq_ops mmc_pwrseq_simple_ops = {
+ 	.pre_power_on = mmc_pwrseq_simple_pre_power_on,
+ 	.post_power_on = mmc_pwrseq_simple_post_power_on,
+@@ -151,9 +155,18 @@ static int mmc_pwrseq_simple_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static void mmc_pwrseq_simple_shutdown(struct platform_device *pdev)
++{
++	struct mmc_pwrseq_simple *pwrseq = platform_get_drvdata(pdev);
++
++	dev_info(&pdev->dev, "Turning off mmc\n");
++	__mmc_pwrseq_simple_power_off(pwrseq);
++}
++
+ static struct platform_driver mmc_pwrseq_simple_driver = {
+ 	.probe = mmc_pwrseq_simple_probe,
+ 	.remove = mmc_pwrseq_simple_remove,
++	.shutdown = mmc_pwrseq_simple_shutdown,
+ 	.driver = {
+ 		.name = "pwrseq_simple",
+ 		.of_match_table = mmc_pwrseq_simple_of_match,
+diff --git a/drivers/of/Kconfig b/drivers/of/Kconfig
+index d91618641be6..f6643624c8e3 100644
+--- a/drivers/of/Kconfig
++++ b/drivers/of/Kconfig
+@@ -107,4 +107,11 @@ config OF_DMA_DEFAULT_COHERENT
+ 	# arches should select this if DMA is coherent by default for OF devices
+ 	bool
+ 
++config OF_CONFIGFS
++	bool "Device Tree Overlay ConfigFS interface"
++	select CONFIGFS_FS
++	select OF_OVERLAY
++	help
++	  Enable a simple user-space driven DT overlay interface.
++
+ endif # OF
+diff --git a/drivers/of/Makefile b/drivers/of/Makefile
+index 663a4af0cccd..b00a95adf519 100644
+--- a/drivers/of/Makefile
++++ b/drivers/of/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-y = base.o device.o platform.o property.o
+ obj-$(CONFIG_OF_KOBJ) += kobj.o
++obj-$(CONFIG_OF_CONFIGFS) += configfs.o
+ obj-$(CONFIG_OF_DYNAMIC) += dynamic.o
+ obj-$(CONFIG_OF_FLATTREE) += fdt.o
+ obj-$(CONFIG_OF_EARLY_FLATTREE) += fdt_address.o
+diff --git a/drivers/pci/controller/pcie-rockchip-host.c b/drivers/pci/controller/pcie-rockchip-host.c
+index 94af6f5828a3..d33695d82793 100644
+--- a/drivers/pci/controller/pcie-rockchip-host.c
++++ b/drivers/pci/controller/pcie-rockchip-host.c
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
++#include <linux/moduleparam.h>
+ #include <linux/of_address.h>
+ #include <linux/of_device.h>
+ #include <linux/of_pci.h>
+@@ -39,6 +40,9 @@
+ #include "../pci.h"
+ #include "pcie-rockchip.h"
+ 
++static int bus_scan_delay = -1;
++module_param_named(pcie_rk_bus_scan_delay, bus_scan_delay, int, S_IRUGO);
++
+ static void rockchip_pcie_enable_bw_int(struct rockchip_pcie *rockchip)
+ {
+ 	u32 status;
+@@ -953,6 +957,7 @@ static int rockchip_pcie_probe(struct platform_device *pdev)
+ 	struct pci_host_bridge *bridge;
+ 	struct resource *bus_res;
+ 	int err;
++	u32 delay = 0;
+ 
+ 	if (!dev->of_node)
+ 		return -ENODEV;
+@@ -1015,6 +1020,18 @@ static int rockchip_pcie_probe(struct platform_device *pdev)
+ 	bridge->map_irq = of_irq_parse_and_map_pci;
+ 	bridge->swizzle_irq = pci_common_swizzle;
+ 
++	/* Prefer command-line param over device tree */
++	if (bus_scan_delay > 0) {
++		delay = bus_scan_delay;
++		dev_info(dev, "wait %u ms (from command-line) before bus scan\n", delay);
++	} else if (rockchip->bus_scan_delay > 0 && bus_scan_delay < 0) {
++		delay = rockchip->bus_scan_delay;
++		dev_info(dev, "wait %u ms (from device tree) before bus scan\n", delay);
++	}
++	if (delay > 0) {
++		msleep(delay);
++	}
++
+ 	err = pci_scan_root_bus_bridge(bridge);
+ 	if (err < 0)
+ 		goto err_remove_irq_domain;
+diff --git a/drivers/pci/controller/pcie-rockchip.c b/drivers/pci/controller/pcie-rockchip.c
+index c53d1322a3d6..f518fd00fbad 100644
+--- a/drivers/pci/controller/pcie-rockchip.c
++++ b/drivers/pci/controller/pcie-rockchip.c
+@@ -150,6 +150,14 @@ int rockchip_pcie_parse_dt(struct rockchip_pcie *rockchip)
+ 		return PTR_ERR(rockchip->clk_pcie_pm);
+ 	}
+ 
++	err = of_property_read_u32(node, "bus-scan-delay-ms", &rockchip->bus_scan_delay);
++	if (err) {
++		dev_info(dev, "no bus-scan-delay-ms in device tree, default 0 ms\n");
++		rockchip->bus_scan_delay = 0;
++	} else {
++		dev_info(dev, "bus-scan-delay-ms in device tree is %u ms\n", rockchip->bus_scan_delay);
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(rockchip_pcie_parse_dt);
+diff --git a/drivers/pci/controller/pcie-rockchip.h b/drivers/pci/controller/pcie-rockchip.h
+index d90dfb354573..32f0a4b5ebe6 100644
+--- a/drivers/pci/controller/pcie-rockchip.h
++++ b/drivers/pci/controller/pcie-rockchip.h
+@@ -308,6 +308,7 @@ struct rockchip_pcie {
+ 	phys_addr_t msg_bus_addr;
+ 	bool is_rc;
+ 	struct resource *mem_res;
++	u32	bus_scan_delay;
+ };
+ 
+ static u32 rockchip_pcie_read(struct rockchip_pcie *rockchip, u32 reg)
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c b/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
+index 9ca20c947283..ca91a01f321c 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
+@@ -316,6 +316,77 @@ static const struct pre_pll_config pre_pll_cfg_table[] = {
+ 	{594000000, 371250000, 4, 495, 1, 2, 0,  1, 3, 1, 1, 1, 0},
+ 	{593407000, 593407000, 1,  98, 0, 2, 0,  1, 0, 1, 1, 0, 0xE6AE6B},
+ 	{594000000, 594000000, 1,  99, 0, 2, 0,  1, 0, 1, 1, 0, 0},
++	{ 25175000,  25175000, 30, 1007, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 31500000,  31500000,  1,   21, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 33750000,  33750000,  1,   45, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 35500000,  35500000,  3,   71, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 36000000,  36000000,  1,   12, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 49500000,  49500000,  1,   33, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 50000000,  50000000,  3,   50, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 56250000,  56250000,  1,   75, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 65000000,  65000000,  3,   65, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 68250000,  68250000,  1,   91, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 71000000,  71000000,  3,   71, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 72000000,  72000000,  1,   24, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 73250000,  73250000,  3,  293, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 75000000,  75000000,  1,   25, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 78750000,  78750000,  1,  105, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 79500000,  79500000,  1,   53, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 83500000,  83500000,  3,  167, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 85500000,  85500000,  1,   57, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 88750000,  88750000,  3,  355, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 94500000,  94500000,  1,   63, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{101000000, 101000000,  3,  101, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{102250000, 102250000,  3,  409, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{106500000, 106500000,  1,   71, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{108000000, 108000000,  1,   36, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{115500000, 115500000,  1,   77, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{117500000, 117500000,  3,  235, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{119000000, 119000000,  3,  119, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{121750000, 121750000,  3,  487, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{122500000, 122500000,  3,  245, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{135000000, 135000000,  1,   45, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{136750000, 136750000,  3,  547, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{140250000, 140250000,  1,  187, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{146250000, 146250000,  1,  195, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{148250000, 148250000,  3,  593, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{154000000, 154000000,  3,  154, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{156000000, 156000000,  1,   52, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{156750000, 156750000,  1,  209, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{157000000, 157000000,  3,  157, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{157500000, 157500000,  1,  105, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{162000000, 162000000,  1,   54, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{175500000, 175500000,  1,  117, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{179500000, 179500000,  3,  359, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{182750000, 182750000,  3,  731, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{187000000, 187000000,  3,  187, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{187250000, 187250000,  3,  749, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{189000000, 189000000,  1,   63, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{193250000, 193250000,  3,  773, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{202500000, 202500000,  1,  135, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{204750000, 204750000,  1,  273, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{208000000, 208000000,  3,  208, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{214750000, 214750000,  3,  859, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{218250000, 218250000,  1,  291, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{229500000, 229500000,  1,  153, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{234000000, 234000000,  1,   78, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{241500000, 241500000,  1,  161, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{245250000, 245250000,  1,  327, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{245500000, 245500000,  3,  491, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{261000000, 261000000,  1,   87, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{268250000, 268250000,  3, 1073, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{268500000, 268500000,  1,  179, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{281250000, 281250000,  1,  375, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{288000000, 288000000,  1,   96, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{312250000, 312250000,  3, 1249, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{317000000, 317000000,  3,  317, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{333250000, 333250000,  3, 1333, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{348500000, 348500000,  3,  697, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{356500000, 356500000,  3,  713, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{380500000, 380500000,  3,  761, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{443250000, 443250000,  1,  591, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{505250000, 505250000,  3, 2021, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{552750000, 552750000,  1,  737, 1, 2, 2, 1, 2, 3, 4, 0, 0},
+ 	{ /* sentinel */ }
+ };
+ 
+diff --git a/drivers/phy/rockchip/phy-rockchip-typec.c b/drivers/phy/rockchip/phy-rockchip-typec.c
+index 24563160197f..f5b497b4b97e 100644
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -40,6 +40,7 @@
+ #include <linux/clk-provider.h>
+ #include <linux/delay.h>
+ #include <linux/extcon.h>
++#include <linux/extcon-provider.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/kernel.h>
+@@ -1160,6 +1161,22 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 				dev_err(dev, "Invalid or missing extcon\n");
+ 			return PTR_ERR(tcphy->extcon);
+ 		}
++	} else {
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB_HOST,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_DISP_DP,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB_HOST,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_DISP_DP,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_sync(tcphy->extcon, EXTCON_USB);
++		extcon_sync(tcphy->extcon, EXTCON_USB_HOST);
++		extcon_sync(tcphy->extcon, EXTCON_DISP_DP);
+ 	}
+ 
+ 	pm_runtime_enable(dev);
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index 9a5591ab90d0..c8bc85906dee 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -116,6 +116,17 @@ config BATTERY_CPCAP
+ 	  Say Y here to enable support for battery on Motorola
+ 	  phones and tablets such as droid 4.
+ 
++config BATTERY_CW2015
++	tristate "CW2015 Battery driver"
++	depends on I2C
++	select REGMAP_I2C
++	help
++	  Say Y here to enable support for the cellwise cw2015
++	  battery fuel gauge (used in the Pinebook Pro & others)
++
++	  This driver can also be built as a module. If so, the module will be
++	  called cw2015_battery.
++
+ config BATTERY_DS2760
+ 	tristate "DS2760 battery driver (HP iPAQ & others)"
+ 	depends on W1
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 6c7da920ea83..69727a10e835 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -24,6 +24,7 @@ obj-$(CONFIG_BATTERY_ACT8945A)	+= act8945a_charger.o
+ obj-$(CONFIG_BATTERY_AXP20X)	+= axp20x_battery.o
+ obj-$(CONFIG_CHARGER_AXP20X)	+= axp20x_ac_power.o
+ obj-$(CONFIG_BATTERY_CPCAP)	+= cpcap-battery.o
++obj-$(CONFIG_BATTERY_CW2015)	+= cw2015_battery.o
+ obj-$(CONFIG_BATTERY_DS2760)	+= ds2760_battery.o
+ obj-$(CONFIG_BATTERY_DS2780)	+= ds2780_battery.o
+ obj-$(CONFIG_BATTERY_DS2781)	+= ds2781_battery.o
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index d015d99cb59d..f621f7468488 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -5271,6 +5271,14 @@ void regulator_unregister(struct regulator_dev *rdev)
+ EXPORT_SYMBOL_GPL(regulator_unregister);
+ 
+ #ifdef CONFIG_SUSPEND
++static inline int can_enable(struct regulator_dev *rdev) {
++	return rdev->ena_pin || rdev->desc->ops->enable;
++}
++
++static inline int can_disable(struct regulator_dev *rdev) {
++	return rdev->ena_pin || rdev->desc->ops->disable;
++}
++
+ /**
+  * regulator_suspend - prepare regulators for system wide suspend
+  * @dev: ``&struct device`` pointer that is passed to _regulator_suspend()
+@@ -5281,10 +5289,33 @@ static int regulator_suspend(struct device *dev)
+ {
+ 	struct regulator_dev *rdev = dev_to_rdev(dev);
+ 	suspend_state_t state = pm_suspend_target_state;
++	struct regulator_state *rstate;
+ 	int ret;
+ 
+ 	regulator_lock(rdev);
+ 	ret = suspend_set_state(rdev, state);
++	if (ret) {
++		goto out;
++	}
++
++	rstate = regulator_get_suspend_state(rdev, state);
++	if (rstate == NULL)
++		goto out;
++
++	if (rstate->enabled == ENABLE_IN_SUSPEND && can_enable(rdev)) {
++		if (!rdev->desc->ops->set_suspend_enable) {
++			rdev->resume_state = _regulator_is_enabled(rdev);
++			rdev_info(rdev, "Entering suspend %d, enabling forcibly, was %s\n", state, rdev->resume_state ? "on" : "off");
++			ret = _regulator_do_enable(rdev);
++		}
++	} else if (rstate->enabled == DISABLE_IN_SUSPEND && can_disable(rdev)) {
++		if (!rdev->desc->ops->set_suspend_disable) {
++			rdev->resume_state = _regulator_is_enabled(rdev);
++			rdev_info(rdev, "Entering suspend %d, disabling forcibly, was %s\n", state, rdev->resume_state ? "on" : "off");
++			ret = _regulator_do_disable(rdev);
++		}
++	}
++out:
+ 	regulator_unlock(rdev);
+ 
+ 	return ret;
+@@ -5303,10 +5334,19 @@ static int regulator_resume(struct device *dev)
+ 
+ 	regulator_lock(rdev);
+ 
+-	if (rdev->desc->ops->resume &&
+-	    (rstate->enabled == ENABLE_IN_SUSPEND ||
+-	     rstate->enabled == DISABLE_IN_SUSPEND))
+-		ret = rdev->desc->ops->resume(rdev);
++	if (rstate->enabled == ENABLE_IN_SUSPEND || rstate->enabled == DISABLE_IN_SUSPEND) {
++		if (rdev->desc->ops->resume) {
++			ret = rdev->desc->ops->resume(rdev);
++		} else if ((rstate->enabled == ENABLE_IN_SUSPEND && !rdev->desc->ops->set_suspend_enable) || 
++		           (rstate->enabled == DISABLE_IN_SUSPEND && !rdev->desc->ops->set_suspend_disable)) {
++			rdev_info(rdev, "Resuming, restoring state to %s\n", rdev->resume_state ? "on" : "off");
++			if (rdev->resume_state && can_enable(rdev)) {
++				ret = _regulator_do_enable(rdev);
++			} else if (!rdev->resume_state && can_disable(rdev)) {
++				ret = _regulator_do_disable(rdev);
++			}
++		}
++	}
+ 
+ 	regulator_unlock(rdev);
+ 
+diff --git a/drivers/soc/rockchip/Kconfig b/drivers/soc/rockchip/Kconfig
+index b71b73bf5fc5..bfadbecd0df8 100644
+--- a/drivers/soc/rockchip/Kconfig
++++ b/drivers/soc/rockchip/Kconfig
+@@ -26,4 +26,10 @@ config ROCKCHIP_PM_DOMAINS
+ 
+           If unsure, say N.
+ 
++config ROCKCHIP_SUSPEND_MODE
++	bool "Rockchip suspend mode config"
++	depends on ROCKCHIP_SIP
++	help
++	  Say Y here if you want to set the suspend mode to the ATF.
++
+ endif
+diff --git a/drivers/soc/rockchip/Makefile b/drivers/soc/rockchip/Makefile
+index afca0a4c4b72..a15c0a395a33 100644
+--- a/drivers/soc/rockchip/Makefile
++++ b/drivers/soc/rockchip/Makefile
+@@ -4,3 +4,4 @@
+ #
+ obj-$(CONFIG_ROCKCHIP_GRF) += grf.o
+ obj-$(CONFIG_ROCKCHIP_PM_DOMAINS) += pm_domains.o
++obj-$(CONFIG_ROCKCHIP_SUSPEND_MODE) += rockchip_pm_config.o
+diff --git a/drivers/tty/serdev/core.c b/drivers/tty/serdev/core.c
+index c5f0d936b003..37e45c356540 100644
+--- a/drivers/tty/serdev/core.c
++++ b/drivers/tty/serdev/core.c
+@@ -432,11 +432,22 @@ static int serdev_drv_remove(struct device *dev)
+ 	return 0;
+ }
+ 
++static void serdev_drv_shutdown(struct device *dev)
++{
++	const struct serdev_device_driver *sdrv;
++	if (dev->driver) {
++		sdrv = to_serdev_device_driver(dev->driver);
++		if (sdrv->shutdown)
++			sdrv->shutdown(to_serdev_device(dev));
++	}
++}
++
+ static struct bus_type serdev_bus_type = {
+ 	.name		= "serial",
+ 	.match		= serdev_device_match,
+ 	.probe		= serdev_drv_probe,
+ 	.remove		= serdev_drv_remove,
++	.shutdown	= serdev_drv_shutdown,
+ };
+ 
+ /**
+diff --git a/drivers/usb/storage/uas-detect.h b/drivers/usb/storage/uas-detect.h
+index 3734a25e09e5..a50072fa44ce 100644
+--- a/drivers/usb/storage/uas-detect.h
++++ b/drivers/usb/storage/uas-detect.h
+@@ -116,6 +116,14 @@ static int uas_use_uas_driver(struct usb_interface *intf,
+ 	if (le16_to_cpu(udev->descriptor.idVendor) == 0x0bc2)
+ 		flags |= US_FL_NO_ATA_1X;
+ 
++	/* ayufan: All Seagate disk do probably have broken UAS support */
++	if (le16_to_cpu(udev->descriptor.idVendor) == 0x0bc2)
++		flags |= US_FL_IGNORE_UAS;
++
++	/* ayufan: All WD disk do probably have broken UAS support */
++	if (le16_to_cpu(udev->descriptor.idVendor) == 0x1058)
++		flags |= US_FL_IGNORE_UAS;
++
+ 	usb_stor_adjust_quirks(udev, &flags);
+ 
+ 	if (flags & US_FL_IGNORE_UAS) {
+diff --git a/drivers/usb/storage/unusual_uas.h b/drivers/usb/storage/unusual_uas.h
+index 37157ed9a881..a794f0753c9f 100644
+--- a/drivers/usb/storage/unusual_uas.h
++++ b/drivers/usb/storage/unusual_uas.h
+@@ -126,3 +126,10 @@ UNUSUAL_DEV(0x4971, 0x8024, 0x0000, 0x9999,
+ 		"External HDD",
+ 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+ 		US_FL_ALWAYS_SYNC),
++
++/* Reported-by: Thomas Kaiser and Kamil Trzciński <ayufan@ayufan.eu> */
++UNUSUAL_DEV(0x2537, 0x1066, 0x0000, 0x9999,
++		"Norelsys",
++		"NS1066X",
++		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
++		US_FL_IGNORE_UAS),
+diff --git a/drivers/usb/typec/altmodes/displayport.c b/drivers/usb/typec/altmodes/displayport.c
+index 0edfb89e04a8..c87cd57302cd 100644
+--- a/drivers/usb/typec/altmodes/displayport.c
++++ b/drivers/usb/typec/altmodes/displayport.c
+@@ -9,6 +9,8 @@
+  */
+ 
+ #include <linux/delay.h>
++#include <linux/extcon.h>
++#include <linux/extcon-provider.h>
+ #include <linux/mutex.h>
+ #include <linux/module.h>
+ #include <linux/usb/pd_vdo.h>
+@@ -134,15 +136,53 @@ static int dp_altmode_status_update(struct dp_altmode *dp)
+ 	return ret;
+ }
+ 
++static void dp_altmode_update_extcon(struct dp_altmode *dp, bool disconnect) {
++	const struct device *dev = &dp->port->dev;
++	struct extcon_dev* edev = NULL;
++
++	while (dev) {
++		edev = extcon_find_edev_by_node(dev->of_node);
++		if(!IS_ERR(edev)) {
++			break;
++		}
++		dev = dev->parent;
++	}
++
++	if (IS_ERR_OR_NULL(edev)) {
++		return;
++	}
++
++	if (disconnect || !dp->data.conf) {
++		extcon_set_state_sync(edev, EXTCON_DISP_DP, false);
++	} else {
++		union extcon_property_value extcon_true = { .intval = true };
++		extcon_set_state(edev, EXTCON_DISP_DP, true);
++		if (DP_CONF_GET_PIN_ASSIGN(dp->data.conf) & DP_PIN_ASSIGN_MULTI_FUNC_MASK) {
++			extcon_set_state_sync(edev, EXTCON_USB_HOST, true);
++			extcon_set_property(edev, EXTCON_DISP_DP, EXTCON_PROP_USB_SS,
++						 extcon_true);
++		} else {
++			extcon_set_state_sync(edev, EXTCON_USB_HOST, false);
++		}
++		extcon_sync(edev, EXTCON_DISP_DP);
++		extcon_set_state_sync(edev, EXTCON_USB, false);
++	}
++
++}
++
+ static int dp_altmode_configured(struct dp_altmode *dp)
+ {
+ 	int ret;
+ 
+ 	sysfs_notify(&dp->alt->dev.kobj, "displayport", "configuration");
+ 
+-	if (!dp->data.conf)
++	if (!dp->data.conf) {
++		dp_altmode_update_extcon(dp, true);
+ 		return typec_altmode_notify(dp->alt, TYPEC_STATE_USB,
+ 					    &dp->data);
++	}
++
++	dp_altmode_update_extcon(dp, false);
+ 
+ 	ret = dp_altmode_notify(dp);
+ 	if (ret)
+@@ -169,9 +209,11 @@ static int dp_altmode_configure_vdm(struct dp_altmode *dp, u32 conf)
+ 	if (ret) {
+ 		if (DP_CONF_GET_PIN_ASSIGN(dp->data.conf))
+ 			dp_altmode_notify(dp);
+-		else
++		else {
++			dp_altmode_update_extcon(dp, true);
+ 			typec_altmode_notify(dp->alt, TYPEC_STATE_USB,
+ 					     &dp->data);
++		}
+ 	}
+ 
+ 	return ret;
+@@ -210,6 +252,8 @@ static void dp_altmode_work(struct work_struct *work)
+ 	case DP_STATE_EXIT:
+ 		if (typec_altmode_exit(dp->alt))
+ 			dev_err(&dp->alt->dev, "Exit Mode Failed!\n");
++		else
++			dp_altmode_update_extcon(dp, true);
+ 		break;
+ 	default:
+ 		break;
+@@ -520,8 +564,13 @@ int dp_altmode_probe(struct typec_altmode *alt)
+ 	if (!(DP_CAP_DFP_D_PIN_ASSIGN(port->vdo) &
+ 	      DP_CAP_UFP_D_PIN_ASSIGN(alt->vdo)) &&
+ 	    !(DP_CAP_UFP_D_PIN_ASSIGN(port->vdo) &
+-	      DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo)))
++	      DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo))) {
++		dev_err(&alt->dev, "No compatible pin configuration found:"\
++			"%04lx -> %04lx, %04lx <- %04lx",
++			DP_CAP_DFP_D_PIN_ASSIGN(port->vdo), DP_CAP_UFP_D_PIN_ASSIGN(alt->vdo),
++			DP_CAP_UFP_D_PIN_ASSIGN(port->vdo), DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo));
+ 		return -ENODEV;
++	}
+ 
+ 	ret = sysfs_create_group(&alt->dev.kobj, &dp_altmode_group);
+ 	if (ret)
+diff --git a/drivers/usb/typec/bus.c b/drivers/usb/typec/bus.c
+index f241037df7cb..2614ad925dd9 100644
+--- a/drivers/usb/typec/bus.c
++++ b/drivers/usb/typec/bus.c
+@@ -164,8 +164,14 @@ EXPORT_SYMBOL_GPL(typec_altmode_exit);
+  */
+ void typec_altmode_attention(struct typec_altmode *adev, u32 vdo)
+ {
+-	struct typec_altmode *pdev = &to_altmode(adev)->partner->adev;
++	struct typec_altmode *pdev;
++	WARN_ONCE(!adev, "typec bus attention: adev is NULL!");
++	WARN_ONCE(!to_altmode(adev)->partner, "typec bus attention: partner is NULL!");
++	if(!adev || !to_altmode(adev)->partner) {
++		return;
++	}
+ 
++	pdev = &to_altmode(adev)->partner->adev;
+ 	if (pdev->ops && pdev->ops->attention)
+ 		pdev->ops->attention(pdev, vdo);
+ }
+diff --git a/drivers/usb/typec/tcpm/tcpm.c b/drivers/usb/typec/tcpm/tcpm.c
+index c033dfb2dd8a..2cdc554c670e 100644
+--- a/drivers/usb/typec/tcpm/tcpm.c
++++ b/drivers/usb/typec/tcpm/tcpm.c
+@@ -8,6 +8,7 @@
+ #include <linux/completion.h>
+ #include <linux/debugfs.h>
+ #include <linux/device.h>
++#include <linux/extcon-provider.h>
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -322,6 +323,12 @@ struct tcpm_port {
+ 	/* port belongs to a self powered device */
+ 	bool self_powered;
+ 
++
++#ifdef CONFIG_EXTCON
++	struct extcon_dev *extcon;
++	unsigned int *extcon_cables;
++#endif
++
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *dentry;
+ 	struct mutex logbuffer_lock;	/* log buffer access lock */
+@@ -599,6 +606,35 @@ static void tcpm_debugfs_exit(const struct tcpm_port *port) { }
+ 
+ #endif
+ 
++static void tcpm_update_extcon_data(struct tcpm_port *port, bool attached) {
++#ifdef CONFIG_EXTCON
++	unsigned int *capability = port->extcon_cables;
++	if (port->data_role == TYPEC_HOST) {
++		extcon_set_state(port->extcon, EXTCON_USB, false);
++		extcon_set_state(port->extcon, EXTCON_USB_HOST, attached);
++	} else {
++		extcon_set_state(port->extcon, EXTCON_USB, true);
++		extcon_set_state(port->extcon, EXTCON_USB_HOST, attached);
++	}
++	while (*capability != EXTCON_NONE) {
++		if (attached) {
++			union extcon_property_value val;
++			val.intval = (port->polarity == TYPEC_POLARITY_CC2);
++			extcon_set_property(port->extcon, *capability,
++				EXTCON_PROP_USB_TYPEC_POLARITY, val);
++		} else {
++			extcon_set_state(port->extcon, *capability, false);
++		}
++		extcon_sync(port->extcon, *capability);
++		capability++;
++	}
++	tcpm_log(port, "Extcon update (%s): %s, %s",
++		attached ? "attached" : "detached",
++		port->data_role == TYPEC_HOST ? "host" : "device",
++		port->polarity == TYPEC_POLARITY_CC1 ? "normal" : "flipped");
++#endif
++}
++
+ static int tcpm_pd_transmit(struct tcpm_port *port,
+ 			    enum tcpm_transmit_type type,
+ 			    const struct pd_message *msg)
+@@ -788,10 +824,11 @@ static int tcpm_set_roles(struct tcpm_port *port, bool attached,
+ 	else
+ 		orientation = TYPEC_ORIENTATION_REVERSE;
+ 
+-	if (data == TYPEC_HOST)
++	if (data == TYPEC_HOST) {
+ 		usb_role = USB_ROLE_HOST;
+-	else
++	} else {
+ 		usb_role = USB_ROLE_DEVICE;
++	}
+ 
+ 	ret = tcpm_mux_set(port, TYPEC_STATE_USB, usb_role, orientation);
+ 	if (ret < 0)
+@@ -806,6 +843,8 @@ static int tcpm_set_roles(struct tcpm_port *port, bool attached,
+ 	typec_set_data_role(port->typec_port, data);
+ 	typec_set_pwr_role(port->typec_port, role);
+ 
++	tcpm_update_extcon_data(port, attached);
++
+ 	return 0;
+ }
+ 
+@@ -1016,7 +1055,7 @@ static void svdm_consume_modes(struct tcpm_port *port, const __le32 *payload,
+ 		paltmode->mode = i;
+ 		paltmode->vdo = le32_to_cpu(payload[i]);
+ 
+-		tcpm_log(port, " Alternate mode %d: SVID 0x%04x, VDO %d: 0x%08x",
++		tcpm_log(port, "Alternate mode %d: SVID 0x%04x, VDO %d: 0x%08x",
+ 			 pmdata->altmodes, paltmode->svid,
+ 			 paltmode->mode, paltmode->vdo);
+ 
+@@ -1036,6 +1075,9 @@ static void tcpm_register_partner_altmodes(struct tcpm_port *port)
+ 		if (!altmode)
+ 			tcpm_log(port, "Failed to register partner SVID 0x%04x",
+ 				 modep->altmode_desc[i].svid);
++		else
++			tcpm_log(port, "Registered altmode 0x%04x", modep->altmode_desc[i].svid);
++
+ 		port->partner_altmode[i] = altmode;
+ 	}
+ }
+@@ -1139,9 +1181,11 @@ static int tcpm_pd_svdm(struct tcpm_port *port, const __le32 *payload, int cnt,
+ 			modep->svid_index++;
+ 			if (modep->svid_index < modep->nsvids) {
+ 				u16 svid = modep->svids[modep->svid_index];
++				tcpm_log(port, "More modes available, sending discover");
+ 				response[0] = VDO(svid, 1, CMD_DISCOVER_MODES);
+ 				rlen = 1;
+ 			} else {
++				tcpm_log(port, "Got all patner modes, registering");
+ 				tcpm_register_partner_altmodes(port);
+ 			}
+ 			break;
+@@ -2664,6 +2708,7 @@ static int tcpm_src_attach(struct tcpm_port *port)
+ static void tcpm_typec_disconnect(struct tcpm_port *port)
+ {
+ 	if (port->connected) {
++		tcpm_update_extcon_data(port, false);
+ 		typec_unregister_partner(port->partner);
+ 		port->partner = NULL;
+ 		port->connected = false;
+@@ -2721,6 +2766,8 @@ static void tcpm_detach(struct tcpm_port *port)
+ 		port->hard_reset_count = 0;
+ 
+ 	tcpm_reset_port(port);
++
++	tcpm_update_extcon_data(port, false);
+ }
+ 
+ static void tcpm_src_detach(struct tcpm_port *port)
+@@ -4389,6 +4436,64 @@ void tcpm_tcpc_reset(struct tcpm_port *port)
+ }
+ EXPORT_SYMBOL_GPL(tcpm_tcpc_reset);
+ 
++unsigned int default_supported_cables[] = {
++	EXTCON_NONE
++};
++
++static int tcpm_fw_get_caps_late(struct tcpm_port *port,
++			    struct fwnode_handle *fwnode)
++{
++	int ret, i;
++	ret = fwnode_property_count_u32(fwnode, "typec-altmodes");
++	if (ret > 0) {
++		u32 *props;
++		if (ret % 4) {
++			dev_err(port->dev, "Length of typec altmode array must be divisible by 4");
++			return -EINVAL;
++		}
++
++		props = devm_kzalloc(port->dev, sizeof(u32) * ret, GFP_KERNEL);
++		if (!props) {
++			dev_err(port->dev, "Failed to allocate memory for altmode properties");
++			return -ENOMEM;
++		}
++
++		if(fwnode_property_read_u32_array(fwnode, "typec-altmodes", props, ret) < 0) {
++			dev_err(port->dev, "Failed to read altmodes from port");
++			return -EINVAL;
++		}
++
++		i = 0;
++		while (ret > 0 && i < ARRAY_SIZE(port->port_altmode)) {
++			struct typec_altmode *alt;
++			struct typec_altmode_desc alt_desc = {
++				.svid = props[i * 4],
++				.mode = props[i * 4 + 1],
++				.vdo  = props[i * 4 + 2],
++				.roles = props[i * 4 + 3],
++			};
++
++
++			tcpm_log(port, "Adding altmode SVID: 0x%04x, mode: %d, vdo: %u, role: %d",
++				alt_desc.svid, alt_desc.mode, alt_desc.vdo, alt_desc.roles);
++			alt = typec_port_register_altmode(port->typec_port,
++							  &alt_desc);
++			if (IS_ERR(alt)) {
++				tcpm_log(port,
++					 "%s: failed to register port alternate mode 0x%x",
++					 dev_name(port->dev), alt_desc.svid);
++				break;
++			}
++			typec_altmode_set_drvdata(alt, port);
++			alt->ops = &tcpm_altmode_ops;
++			port->port_altmode[i] = alt;
++			i++;
++			ret -= 4;
++		}
++	}
++	return 0;
++}
++
+ static int tcpm_fw_get_caps(struct tcpm_port *port,
+ 			    struct fwnode_handle *fwnode)
+ {
+@@ -4399,6 +4504,23 @@ static int tcpm_fw_get_caps(struct tcpm_port *port,
+ 	if (!fwnode)
+ 		return -EINVAL;
+ 
++#ifdef CONFIG_EXTCON
++	ret = fwnode_property_count_u32(fwnode, "extcon-cables");
++	if (ret > 0) {
++		port->extcon_cables = devm_kzalloc(port->dev, sizeof(u32) * ret, GFP_KERNEL);
++		if (!port->extcon_cables) {
++			dev_err(port->dev, "Failed to allocate memory for extcon cable types. "\
++				"Using default tyes");
++			goto extcon_default;
++		}
++		fwnode_property_read_u32_array(fwnode, "extcon-cables", port->extcon_cables, ret);
++	} else {
++extcon_default:
++		dev_info(port->dev, "No cable types defined, using default cables");
++		port->extcon_cables = default_supported_cables;
++	}
++#endif
++
+ 	/* USB data support is optional */
+ 	ret = fwnode_property_read_string(fwnode, "data-role", &cap_str);
+ 	if (ret == 0) {
+@@ -4731,6 +4853,17 @@ struct tcpm_port *tcpm_register_port(struct device *dev, struct tcpc_dev *tcpc)
+ 		goto out_destroy_wq;
+ 
+ 	port->try_role = port->typec_caps.prefer_role;
++#ifdef CONFIG_EXTCON
++	port->extcon = devm_extcon_dev_allocate(dev, port->extcon_cables);
++	if (IS_ERR(port->extcon)) {
++		dev_err(dev, "Failed to allocate extcon device: %ld", PTR_ERR(port->extcon));
++		goto out_destroy_wq;
++	}
++	if((err = devm_extcon_dev_register(dev, port->extcon))) {
++		dev_err(dev, "Failed to register extcon device: %d", err);
++		goto out_destroy_wq;
++	}
++#endif
+ 
+ 	port->typec_caps.fwnode = tcpc->fwnode;
+ 	port->typec_caps.revision = 0x0120;	/* Type-C spec release 1.2 */
+@@ -4757,6 +4890,12 @@ struct tcpm_port *tcpm_register_port(struct device *dev, struct tcpc_dev *tcpc)
+ 		goto out_role_sw_put;
+ 	}
+ 
++	err = tcpm_fw_get_caps_late(port, tcpc->fwnode);
++	if (err < 0) {
++		dev_err(dev, "Failed to get altmodes from fwnode");
++		goto out_destroy_wq;
++	}
++
+ 	mutex_lock(&port->lock);
+ 	tcpm_init(port);
+ 	mutex_unlock(&port->lock);
+diff --git a/include/linux/leds.h b/include/linux/leds.h
+index 75353e5f9d13..fa707170b69e 100644
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -74,6 +74,7 @@ struct led_classdev {
+ #define LED_BRIGHT_HW_CHANGED	BIT(21)
+ #define LED_RETAIN_AT_SHUTDOWN	BIT(22)
+ #define LED_INIT_DEFAULT_TRIGGER BIT(23)
++#define LED_INVERT_TRIGGER	BIT(24)
+ 
+ 	/* set_brightness_work / blink_timer flags, atomic, private. */
+ 	unsigned long		work_flags;
+diff --git a/include/linux/mfd/rk808.h b/include/linux/mfd/rk808.h
+index a59bf323f713..289089bbe75c 100644
+--- a/include/linux/mfd/rk808.h
++++ b/include/linux/mfd/rk808.h
+@@ -622,5 +622,6 @@ struct rk808 {
+ 	const struct regmap_irq_chip	*regmap_irq_chip;
+ 	void				(*pm_pwroff_fn)(void);
+ 	void				(*pm_pwroff_prep_fn)(void);
++	bool				use_syscore_powerdown;
+ };
+ #endif /* __LINUX_REGULATOR_RK808_H */
+diff --git a/include/linux/regulator/driver.h b/include/linux/regulator/driver.h
+index 9a911bb5fb61..146fb5e8fc6e 100644
+--- a/include/linux/regulator/driver.h
++++ b/include/linux/regulator/driver.h
+@@ -482,6 +482,9 @@ struct regulator_dev {
+ 
+ 	/* time when this regulator was disabled last time */
+ 	unsigned long last_off_jiffy;
++
++	/* state when resuming */
++	int resume_state;
+ };
+ 
+ struct regulator_dev *
+diff --git a/include/linux/serdev.h b/include/linux/serdev.h
+index 9f14f9c12ec4..94050561325c 100644
+--- a/include/linux/serdev.h
++++ b/include/linux/serdev.h
+@@ -63,6 +63,7 @@ struct serdev_device_driver {
+ 	struct device_driver driver;
+ 	int	(*probe)(struct serdev_device *);
+ 	void	(*remove)(struct serdev_device *);
++	void	(*shutdown)(struct serdev_device *);
+ };
+ 
+ static inline struct serdev_device_driver *to_serdev_device_driver(struct device_driver *d)
+diff --git a/net/rfkill/rfkill-gpio.c b/net/rfkill/rfkill-gpio.c
+index f5afc9bcdee6..075e3070440e 100644
+--- a/net/rfkill/rfkill-gpio.c
++++ b/net/rfkill/rfkill-gpio.c
+@@ -148,6 +148,14 @@ static int rfkill_gpio_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id rfkill_of_match[] = {
++	{ .compatible = "rfkill,gpio", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, rfkill_of_match);
++#endif
++
+ #ifdef CONFIG_ACPI
+ static const struct acpi_device_id rfkill_acpi_match[] = {
+ 	{ "BCM4752", RFKILL_TYPE_GPS },
+@@ -162,6 +170,9 @@ static struct platform_driver rfkill_gpio_driver = {
+ 	.remove = rfkill_gpio_remove,
+ 	.driver = {
+ 		.name = "rfkill_gpio",
++#ifdef CONFIG_OF
++		.of_match_table = rfkill_of_match,
++#endif
+ 		.acpi_match_table = ACPI_PTR(rfkill_acpi_match),
+ 	},
+ };
+diff --git a/scripts/package/mkdebian b/scripts/package/mkdebian
+index 357dc56bcf30..e60f1f492817 100755
+--- a/scripts/package/mkdebian
++++ b/scripts/package/mkdebian
+@@ -178,12 +178,14 @@ Build-Depends: bc, rsync, kmod, cpio, bison, flex | flex:native $extra_build_dep
+ Homepage: http://www.kernel.org/
+ 
+ Package: $packagename
++Provides: linux-mainline-image
+ Architecture: $debarch
+ Description: Linux kernel, version $version
+  This package contains the Linux kernel, modules and corresponding other
+  files, version: $version.
+ 
+ Package: $kernel_headers_packagename
++Provides: linux-mainline-headers
+ Architecture: $debarch
+ Description: Linux kernel headers for $version on $debarch
+  This package provides kernel header files for $version on $debarch
+@@ -192,7 +194,7 @@ Description: Linux kernel headers for $version on $debarch
+ 
+ Package: linux-libc-dev
+ Section: devel
+-Provides: linux-kernel-headers
++Provides: linux-kernel-headers, linux-mainline-kernel-headers
+ Architecture: $debarch
+ Description: Linux support headers for userspace development
+  This package provides userspaces headers from the Linux kernel.  These headers
+@@ -202,6 +204,7 @@ Multi-Arch: same
+ Package: $dbg_packagename
+ Section: debug
+ Architecture: $debarch
++Provides: linux-mainline-image-dbg, linux-mainline-image-rockchip-dbg
+ Description: Linux kernel debugging symbols for $version
+  This package will come in handy if you need to debug the kernel. It provides
+  all the necessary debug symbols for the kernel and its modules.
+diff --git a/sound/soc/codecs/es8316.c b/sound/soc/codecs/es8316.c
+index 36eef1fb3d18..b303ebbd5f53 100644
+--- a/sound/soc/codecs/es8316.c
++++ b/sound/soc/codecs/es8316.c
+@@ -687,7 +687,7 @@ static void es8316_disable_jack_detect(struct snd_soc_component *component)
+ 	snd_soc_component_update_bits(component, ES8316_GPIO_DEBOUNCE,
+ 				      ES8316_GPIO_ENABLE_INTERRUPT, 0);
+ 
+-	if (es8316->jack->status & SND_JACK_MICROPHONE) {
++	if (es8316->jack && (es8316->jack->status & SND_JACK_MICROPHONE)) {
+ 		es8316_disable_micbias_for_mic_gnd_short_detect(component);
+ 		snd_soc_jack_report(es8316->jack, 0, SND_JACK_BTN_0);
+ 	}
+diff --git a/sound/soc/soc-jack.c b/sound/soc/soc-jack.c
+index b5748dcd490f..a8c199e361e2 100644
+--- a/sound/soc/soc-jack.c
++++ b/sound/soc/soc-jack.c
+@@ -254,8 +254,6 @@ static void snd_soc_jack_gpio_detect(struct snd_soc_jack_gpio *gpio)
+ 	int report;
+ 
+ 	enable = gpiod_get_value_cansleep(gpio->desc);
+-	if (gpio->invert)
+-		enable = !enable;
+ 
+ 	if (enable)
+ 		report = gpio->report;
+@@ -384,6 +382,9 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+ 				goto undo;
+ 			}
+ 		} else {
++			int flags = GPIOF_IN;
++			if (gpios[i].invert)
++				flags |= GPIOF_ACTIVE_LOW;
+ 			/* legacy GPIO number */
+ 			if (!gpio_is_valid(gpios[i].gpio)) {
+ 				dev_err(jack->card->dev,
+@@ -393,7 +394,7 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+ 				goto undo;
+ 			}
+ 
+-			ret = gpio_request_one(gpios[i].gpio, GPIOF_IN,
++			ret = gpio_request_one(gpios[i].gpio, flags,
+ 					       gpios[i].name);
+ 			if (ret)
+ 				goto undo;
