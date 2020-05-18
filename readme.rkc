@@ -17,10 +17,10 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/5.6.13-diff.patch
 tar xzf /compile/doc/stable-rk/misc.rkc/5.6.0-added.tar.gz
 # add new dtbs to Makefile
 patch -p1 < /compile/doc/stable-rk/misc.rkc/add-new-dtbs-to-Makefile.patch
-# add sdmmc_ext for h96max rk3328
-patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patch
 # copy additional dtb files
 cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
+# add sdmmc_ext for h96max rk3328
+patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patch
 # set mac addr on kernel cmdline - otherwise a random one is generated
 # one subpatch seems to be no longer required with v5.3
 #patch -p1 < /compile/doc/stable/misc.av7/gen-stmmac-mac-addr-on-kernel-cmdline.patch
