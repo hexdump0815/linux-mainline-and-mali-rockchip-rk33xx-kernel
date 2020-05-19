@@ -27,6 +27,12 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patc
 patch -p1 < /compile/doc/stable/misc.av8/gen-stmmac-mac-addr-on-kernel-cmdline-v5.3.patch
 # dmc memory freq support for rk3328 - taken from armbian patches
 patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver-v5.6.13.patch
+# add some mali stuff for rk3328
+patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-add-mali-pd-and-clk.patch
+# raise the temperatures a bit
+patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-higher-temps.patch
+# enable gpu for rock64
+patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-rock64-enable-gpu-and-disabled-opp.patch
 
 # git pull
 export ARCH=arm64

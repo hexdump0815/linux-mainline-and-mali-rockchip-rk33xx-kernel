@@ -478,14 +478,6 @@
 		opp-microvolt = <1325000>;
 		status = "disabled";
 	};
-	opp-1392000000 {
-		opp-microvolt = <1375000>;
-		status = "disabled";
-	};
-	opp-1512000000 {
-		opp-microvolt = <1475000>;
-		status = "disabled";
-	};
 };
 
 &emmc {
