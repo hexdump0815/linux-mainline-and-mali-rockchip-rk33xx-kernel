@@ -18,7 +18,7 @@ tar xzf /compile/doc/stable-rk/misc.rkc/5.6.0-added.tar.gz
 # add new dtbs to Makefile
 patch -p1 < /compile/doc/stable-rk/misc.rkc/add-new-dtbs-to-Makefile.patch
 # copy additional dtb files
-cp /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
+cp -i /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 # add sdmmc_ext for h96max rk3328
 patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patch
 # set mac addr on kernel cmdline - otherwise a random one is generated
