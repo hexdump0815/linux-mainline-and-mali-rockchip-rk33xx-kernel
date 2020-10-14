@@ -11,6 +11,7 @@ mv mali-utgard rockchip-rk3328-mali-utgard
 cd rockchip-rk3328-mali-utgard
 git checkout DX910-SW-99002-r9p0-01rel0-multiplatform
 patch -p1 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-rk3328-mali-utgard-compile-v5.6.13.patch
+patch -p0 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-rk3328-mali-utgard-compile-v5.9.patch
 export ARCH=arm64
 KDIR=/compile/source/linux-stable-rk USING_UMP=0 BUILD=debug MALI_DMA_BUF_MAP_ON_ATTACH=1 USING_PROFILING=0 MALI_PLATFORM=rk USING_DVFS=0 USING_DT=1 CROSS_COMPILE= make -C `pwd`/driver/src/devicedrv/mali
 export kver=5.2.0-stb-rkc+
