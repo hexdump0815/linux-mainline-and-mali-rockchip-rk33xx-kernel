@@ -19,26 +19,31 @@ tar xzf /compile/doc/stable-rk/misc.rkc/5.6.0-added.tar.gz
 patch -p1 < /compile/doc/stable-rk/misc.rkc/add-new-dtbs-to-Makefile.patch
 # copy additional dtb files
 cp -i /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
-# add sdmmc_ext for h96max rk3328
-patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328.patch
 # set mac addr on kernel cmdline - otherwise a random one is generated
 # one subpatch seems to be no longer required with v5.3
 #patch -p1 < /compile/doc/stable/misc.av7/gen-stmmac-mac-addr-on-kernel-cmdline.patch
 patch -p1 < /compile/doc/stable/misc.av8/gen-stmmac-mac-addr-on-kernel-cmdline-v5.3.patch
-# dmc memory freq support for rk3328 - taken from armbian patches
-patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver-v5.6.13.patch
 # add some mali stuff for rk3328
 patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-add-mali-pd-and-clk.patch
 # raise the temperatures a bit
 patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-higher-temps.patch
 # enable gpu for rock64
 patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-rock64-enable-gpu-and-disabled-opp.patch
+# add sdmmc_ext for h96max rk3328
+patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328-v5.9.patch
+# dmc memory freq support for rk3328 - taken from armbian patches
+patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver-v5.9.patch
 
 # git pull
 export ARCH=arm64
 # make defconfig + fix options - see misc.rkc/options
 make oldconfig
 make -j 4 Image dtbs modules
+cd tools/perf
+make
+cd ../power/cpupower
+make
+cd ../../..
 export kver=`make kernelrelease`
 echo ${kver}
 # remove debug info if there and wanted
@@ -50,6 +55,10 @@ cp -v .config /boot/config-${kver}
 cp -v arch/arm64/boot/Image /boot/Image-${kver}
 # for s90
 mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
+mkdir -p /boot/tools-${kver}
+cp -v tools/perf/perf /boot/tools-${kver}
+cp -v tools/power/cpupower/cpupower /boot/tools-${kver}
+cp -v tools/power/cpupower/libcpupower.so.0.0.1 /boot/tools-${kver}/libcpupower.so.0
 mkdir /boot/dtb-${kver}
 cp -v arch/arm64/boot/dts/rockchip/rk3318-*.dtb /boot/dtb-${kver}/
 cp -v arch/arm64/boot/dts/rockchip/rk3328-*.dtb /boot/dtb-${kver}/
