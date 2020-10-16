@@ -33,6 +33,10 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/rk3328-rock64-enable-gpu-and-disable
 patch -p0 < /compile/doc/stable-rk/misc.rkc/add-sdmmc-ext-for-h96max-rk3328-v5.9.patch
 # dmc memory freq support for rk3328 - taken from armbian patches
 patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver-v5.9.patch
+# add usb3 support for rk3328
+patch -p1 < /compile/doc/stable-rk/misc.rkc/add-usb3-rk3328.patch
+# another usb3 fix
+patch -p1 < /compile/doc/stable-rk/misc.rkc/0001-usb-dwc3-disable-park-mode.patch
 
 # git pull
 export ARCH=arm64
