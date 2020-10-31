@@ -14,7 +14,7 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-rk3328-mali-utgard-comp
 patch -p0 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-rk3328-mali-utgard-compile-v5.9.patch
 export ARCH=arm64
 KDIR=/compile/source/linux-stable-rk USING_UMP=0 BUILD=debug MALI_DMA_BUF_MAP_ON_ATTACH=1 USING_PROFILING=0 MALI_PLATFORM=rk USING_DVFS=0 USING_DT=1 CROSS_COMPILE= make -C `pwd`/driver/src/devicedrv/mali
-export kver=5.2.0-stb-rkc+
+export kver=5.9.2-stb-rkc+
 mkdir /lib/modules/${kver}/extra
 cp driver/src/devicedrv/mali/mali.ko /lib/modules/${kver}/extra
 tar czf /compile/result/stable-rk/${kver}-mali-rk3328.tar.gz /lib/modules/${kver}/extra/mali.ko

@@ -1,0 +1,5253 @@
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index a1068742a6df..d96eb4eb8b9e 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -2863,6 +2863,14 @@
+ 			log everything. Information is printed at KERN_DEBUG
+ 			so loglevel=8 may also need to be specified.
+ 
++	mmc_cmdqueue= [MMC]
++			Enable or disable MMC command queue (CMDQ) support. When
++			enabled MMC driver will try to enable CMDQ for cards that
++			support it. When disabled CMDQ will not be enabled for any
++			card.
++			Format: <bool>  (1/y/on=enable, 0/n/off=disable)
++			default: enabled
++
+ 	module.sig_enforce
+ 			[KNL] When CONFIG_MODULE_SIG is set, this means that
+ 			modules without (valid) signatures will fail to load.
+diff --git a/Documentation/devicetree/bindings/arm/amlogic.yaml b/Documentation/devicetree/bindings/arm/amlogic.yaml
+index 5eba9f48823e..12ba8d074370 100644
+--- a/Documentation/devicetree/bindings/arm/amlogic.yaml
++++ b/Documentation/devicetree/bindings/arm/amlogic.yaml
+@@ -153,6 +153,7 @@ properties:
+               - azw,gtking
+               - azw,gtking-pro
+               - hardkernel,odroid-n2
++              - hardkernel,odroid-n2-plus
+               - khadas,vim3
+               - ugoos,am6
+           - const: amlogic,s922x
+diff --git a/Documentation/devicetree/bindings/display/panel/ilitek,ili9881c.yaml b/Documentation/devicetree/bindings/display/panel/ilitek,ili9881c.yaml
+index 76a9068a85dd..b2fcec4f22fd 100644
+--- a/Documentation/devicetree/bindings/display/panel/ilitek,ili9881c.yaml
++++ b/Documentation/devicetree/bindings/display/panel/ilitek,ili9881c.yaml
+@@ -14,6 +14,7 @@ properties:
+     items:
+       - enum:
+           - bananapi,lhr050h41
++          - feixin,k101-im2byl02
+       - const: ilitek,ili9881c
+ 
+   backlight: true
+diff --git a/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt b/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
+index 94520493233b..48d7705ed2f3 100644
+--- a/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
++++ b/Documentation/devicetree/bindings/usb/rockchip,dwc3.txt
+@@ -1,7 +1,9 @@
+ Rockchip SuperSpeed DWC3 USB SoC controller
+ 
+ Required properties:
+-- compatible:	should contain "rockchip,rk3399-dwc3" for rk3399 SoC
++- compatible:	should be one of the following:
++  - "rockchip,rk3399-dwc3": for rk3399 SoC
++  - "rockchip,rk3328-dwc3", "rockchip,rk3399-dwc3": for rk3328 SoC
+ - clocks:	A list of phandle + clock-specifier pairs for the
+ 		clocks listed in clock-names
+ - clock-names:	Should contain the following:
+diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
+index 130569f90c54..24427ca35bae 100644
+--- a/arch/arm64/Makefile
++++ b/arch/arm64/Makefile
+@@ -133,7 +133,7 @@ endif
+ head-y		:= arch/arm64/kernel/head.o
+ 
+ # The byte offset of the kernel image in RAM from the start of RAM.
+-TEXT_OFFSET := 0x0
++TEXT_OFFSET := 0x01080000
+ 
+ ifeq ($(CONFIG_KASAN_SW_TAGS), y)
+ KASAN_SHADOW_SCALE_SHIFT := 4
+@@ -153,7 +153,7 @@ libs-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
+ 
+ # Default target when executing plain make
+ boot		:= arch/arm64/boot
+-KBUILD_IMAGE	:= $(boot)/Image.gz
++KBUILD_IMAGE	:= $(boot)/Image
+ 
+ all:	Image.gz
+ 
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
+index 2165f238af13..379663c8915c 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
+@@ -107,6 +107,10 @@
+ 	bias-pull-up;
+ };
+ 
++&i2s2 {
++	status = "okay";
++};
++
+ &mdio {
+ 	ext_rmii_phy1: ethernet-phy@1 {
+ 		compatible = "ethernet-phy-ieee802.3-c22";
+@@ -270,6 +274,10 @@
+ 	status = "okay";
+ };
+ 
++&sound_hdmi {
++	status = "okay";
++};
++
+ /* On Euler connector */
+ &spdif {
+ 	status = "disabled";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinebook.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinebook.dts
+index 64b1c54f87c0..f5744f8dbe7c 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinebook.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinebook.dts
+@@ -139,6 +139,10 @@
+ 	status = "okay";
+ };
+ 
++&i2s2 {
++	status = "okay";
++};
++
+ &mmc0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&mmc0_pins>;
+@@ -402,12 +406,28 @@
+ 	};
+ };
+ 
++&sound_hdmi {
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pb_pins>;
+ 	status = "okay";
+ };
+ 
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++	status = "okay";
++
++	bluetooth {
++		compatible = "realtek,rtl8723cs-bt";
++		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_LOW>; /* PL5 */
++		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
++	};
++};
++
+ &usb_otg {
+ 	dr_mode = "host";
+ };
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone.dtsi
+index 25150aba749d..6df1825eb59a 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone.dtsi
+@@ -408,6 +408,20 @@
+ 	status = "okay";
+ };
+ 
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++	status = "okay";
++
++	bluetooth {
++		compatible = "realtek,rtl8723cs-bt";
++		reset-gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>; /* PL4 */
++		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_LOW>; /* PL5 */
++		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
++		firmware-postfix = "pinebook";
++	};
++};
++
+ /* Connected to the modem (hardware flow control can't be used) */
+ &uart3 {
+ 	pinctrl-names = "default";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinetab.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinetab.dts
+index dc4ab6b434f9..337d9e10373b 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pinetab.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pinetab.dts
+@@ -153,12 +153,10 @@
+ 	status = "okay";
+ 
+ 	panel@0 {
+-		compatible = "feixin,k101-im2ba02";
++		compatible = "feixin,k101-im2byl02";
+ 		reg = <0>;
+-		avdd-supply = <&reg_dc1sw>;
+-		dvdd-supply = <&reg_dc1sw>;
+-		cvdd-supply = <&reg_ldo_io1>;
+-		reset-gpios = <&pio 3 24 GPIO_ACTIVE_HIGH>; /* PD24 */
++		power-supply = <&reg_dc1sw>;
++		reset-gpios = <&pio 3 24 GPIO_ACTIVE_LOW>; /* PD24 */
+ 		backlight = <&backlight>;
+ 	};
+ };
+@@ -442,6 +440,20 @@
+ 	status = "okay";
+ };
+ 
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++	status = "okay";
++
++	bluetooth {
++		compatible = "realtek,rtl8723cs-bt";
++		reset-gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>; /* PL4 */
++		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_LOW>; /* PL5 */
++		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
++		firmware-postfix = "pinebook";
++	};
++};
++
+ &usb_otg {
+ 	dr_mode = "otg";
+ 	status = "okay";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
+index 8dfbcd144072..70644b8e2269 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64.dtsi
+@@ -41,6 +41,11 @@
+ 		};
+ 	};
+ 
++	aliases {
++		// This allows setting ethaddr from u-boot command line
++		ethernet0 = &emac;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -136,7 +141,7 @@
+ 		simple-audio-card,format = "i2s";
+ 		simple-audio-card,frame-master = <&cpudai>;
+ 		simple-audio-card,bitclock-master = <&cpudai>;
+-		simple-audio-card,mclk-fs = <128>;
++		simple-audio-card,mclk-fs = <256>;
+ 		simple-audio-card,aux-devs = <&codec_analog>;
+ 		simple-audio-card,routing =
+ 				"Left DAC", "AIF1 Slot 0 Left",
+@@ -1141,6 +1146,7 @@
+ 		};
+ 
+ 		hdmi: hdmi@1ee0000 {
++            #sound-dai-cells = <0>;
+ 			compatible = "allwinner,sun50i-a64-dw-hdmi",
+ 				     "allwinner,sun8i-a83t-dw-hdmi";
+ 			reg = <0x01ee0000 0x10000>;
+@@ -1184,6 +1190,38 @@
+ 			#phy-cells = <0>;
+ 		};
+ 
++		i2s2: i2s@1c22800 {
++			#sound-dai-cells = <0>;
++			compatible = "allwinner,sun8i-h3-i2s";
++			reg = <0x01c22800 0x400>;
++			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_I2S2>, <&ccu CLK_I2S2>;
++			clock-names = "apb", "mod";
++			dmas = <&dma 27>;
++			resets = <&ccu RST_BUS_I2S2>;
++			dma-names = "tx";
++			allwinner,playback-channels = <8>;
++			status = "disabled";
++		};
++
++		sound_hdmi: sound_hdmi {
++			compatible = "simple-audio-card";
++			simple-audio-card,format = "i2s";
++			simple-audio-card,name = "allwinner-hdmi";
++			simple-audio-card,mclk-fs = <256>;
++			status = "disabled";
++
++			simple-audio-card,codec {
++				sound-dai = <&hdmi>;
++			};
++
++			simple-audio-card,cpu {
++				sound-dai = <&i2s2>;
++				dai-tdm-slot-num = <2>;
++				dai-tdm-slot-width = <32>;
++			};
++		};
++
+ 		rtc: rtc@1f00000 {
+ 			compatible = "allwinner,sun50i-a64-rtc",
+ 				     "allwinner,sun8i-h3-rtc";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-neo-plus2.dts b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-neo-plus2.dts
+index 4f9ba53ffaae..39fb0663963f 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-neo-plus2.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-neo-plus2.dts
+@@ -87,6 +87,14 @@
+ 	status = "okay";
+ };
+ 
++&ehci1 {
++	status = "okay";
++};
++
++&ehci2 {
++	status = "okay";
++};
++
+ &ehci3 {
+ 	status = "okay";
+ };
+@@ -142,6 +150,14 @@
+ 	status = "okay";
+ };
+ 
++&ohci1 {
++	status = "okay";
++};
++
++&ohci2 {
++	status = "okay";
++};
++
+ &ohci3 {
+ 	status = "okay";
+ };
+diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
+index 4e2239ffcaa5..b0b3d6791499 100644
+--- a/arch/arm64/boot/dts/amlogic/Makefile
++++ b/arch/arm64/boot/dts/amlogic/Makefile
+@@ -8,6 +8,7 @@ dtb-$(CONFIG_ARCH_MESON) += meson-g12b-gtking-pro.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-g12b-a311d-khadas-vim3.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-g12b-s922x-khadas-vim3.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-g12b-odroid-n2.dtb
++dtb-$(CONFIG_ARCH_MESON) += meson-g12b-odroid-n2-plus.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-g12b-ugoos-am6.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-kii-pro.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-nanopi-k2.dtb
+diff --git a/arch/arm64/boot/dts/amlogic/meson-g12b-odroid-n2.dts b/arch/arm64/boot/dts/amlogic/meson-g12b-odroid-n2.dts
+index 34fffa6d859d..a198a91259ec 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-g12b-odroid-n2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-g12b-odroid-n2.dts
+@@ -7,625 +7,9 @@
+ /dts-v1/;
+ 
+ #include "meson-g12b-s922x.dtsi"
+-#include <dt-bindings/input/input.h>
+-#include <dt-bindings/gpio/meson-g12a-gpio.h>
+-#include <dt-bindings/sound/meson-g12a-toacodec.h>
+-#include <dt-bindings/sound/meson-g12a-tohdmitx.h>
++#include "meson-g12b-odroid-n2.dtsi"
+ 
+ / {
+ 	compatible = "hardkernel,odroid-n2", "amlogic,s922x", "amlogic,g12b";
+ 	model = "Hardkernel ODROID-N2";
+-
+-	aliases {
+-		serial0 = &uart_AO;
+-		ethernet0 = &ethmac;
+-	};
+-
+-	dioo2133: audio-amplifier-0 {
+-		compatible = "simple-audio-amplifier";
+-		enable-gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_HIGH>;
+-		VCC-supply = <&vcc_5v>;
+-		sound-name-prefix = "U19";
+-		status = "okay";
+-	};
+-
+-	chosen {
+-		stdout-path = "serial0:115200n8";
+-	};
+-
+-	memory@0 {
+-		device_type = "memory";
+-		reg = <0x0 0x0 0x0 0x40000000>;
+-	};
+-
+-	emmc_pwrseq: emmc-pwrseq {
+-		compatible = "mmc-pwrseq-emmc";
+-		reset-gpios = <&gpio BOOT_12 GPIO_ACTIVE_LOW>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-
+-		blue {
+-			label = "n2:blue";
+-			gpios = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+-		};
+-	};
+-
+-	tflash_vdd: regulator-tflash_vdd {
+-		compatible = "regulator-fixed";
+-
+-		regulator-name = "TFLASH_VDD";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-
+-		gpio = <&gpio_ao GPIOAO_8 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-		regulator-always-on;
+-	};
+-
+-	tf_io: gpio-regulator-tf_io {
+-		compatible = "regulator-gpio";
+-
+-		regulator-name = "TF_IO";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <3300000>;
+-
+-		gpios = <&gpio_ao GPIOAO_9 GPIO_ACTIVE_HIGH>;
+-		gpios-states = <0>;
+-
+-		states = <3300000 0>,
+-			 <1800000 1>;
+-	};
+-
+-	flash_1v8: regulator-flash_1v8 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "FLASH_1V8";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		vin-supply = <&vcc_3v3>;
+-		regulator-always-on;
+-	};
+-
+-	main_12v: regulator-main_12v {
+-		compatible = "regulator-fixed";
+-		regulator-name = "12V";
+-		regulator-min-microvolt = <12000000>;
+-		regulator-max-microvolt = <12000000>;
+-		regulator-always-on;
+-	};
+-
+-	vcc_5v: regulator-vcc_5v {
+-		compatible = "regulator-fixed";
+-		regulator-name = "5V";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		regulator-always-on;
+-		vin-supply = <&main_12v>;
+-	};
+-
+-	vcc_1v8: regulator-vcc_1v8 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "VCC_1V8";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		vin-supply = <&vcc_3v3>;
+-		regulator-always-on;
+-	};
+-
+-	vcc_3v3: regulator-vcc_3v3 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "VCC_3V3";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		vin-supply = <&vddao_3v3>;
+-		regulator-always-on;
+-		/* FIXME: actually controlled by VDDCPU_B_EN */
+-	};
+-
+-	vddcpu_a: regulator-vddcpu-a {
+-		/*
+-		 * MP8756GD Regulator.
+-		 */
+-		compatible = "pwm-regulator";
+-
+-		regulator-name = "VDDCPU_A";
+-		regulator-min-microvolt = <721000>;
+-		regulator-max-microvolt = <1022000>;
+-
+-		vin-supply = <&main_12v>;
+-
+-		pwms = <&pwm_ab 0 1250 0>;
+-		pwm-dutycycle-range = <100 0>;
+-
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-
+-	vddcpu_b: regulator-vddcpu-b {
+-		/*
+-		 * Silergy SY8120B1ABC Regulator.
+-		 */
+-		compatible = "pwm-regulator";
+-
+-		regulator-name = "VDDCPU_B";
+-		regulator-min-microvolt = <721000>;
+-		regulator-max-microvolt = <1022000>;
+-
+-		vin-supply = <&main_12v>;
+-
+-		pwms = <&pwm_AO_cd 1 1250 0>;
+-		pwm-dutycycle-range = <100 0>;
+-
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-
+-	hub_5v: regulator-hub_5v {
+-		compatible = "regulator-fixed";
+-		regulator-name = "HUB_5V";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		vin-supply = <&vcc_5v>;
+-
+-		/* Connected to the Hub CHIPENABLE, LOW sets low power state */
+-		gpio = <&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-	};
+-
+-	usb_pwr_en: regulator-usb_pwr_en {
+-		compatible = "regulator-fixed";
+-		regulator-name = "USB_PWR_EN";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		vin-supply = <&vcc_5v>;
+-
+-		/* Connected to the microUSB port power enable */
+-		gpio = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-	};
+-
+-	vddao_1v8: regulator-vddao_1v8 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "VDDAO_1V8";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		vin-supply = <&vddao_3v3>;
+-		regulator-always-on;
+-	};
+-
+-	vddao_3v3: regulator-vddao_3v3 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "VDDAO_3V3";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		vin-supply = <&main_12v>;
+-		regulator-always-on;
+-	};
+-
+-	hdmi-connector {
+-		compatible = "hdmi-connector";
+-		type = "a";
+-
+-		port {
+-			hdmi_connector_in: endpoint {
+-				remote-endpoint = <&hdmi_tx_tmds_out>;
+-			};
+-		};
+-	};
+-
+-	sound {
+-		compatible = "amlogic,axg-sound-card";
+-		model = "G12B-ODROID-N2";
+-		audio-widgets = "Line", "Lineout";
+-		audio-aux-devs = <&tdmout_b>, <&tdmout_c>, <&tdmin_a>,
+-				 <&tdmin_b>, <&tdmin_c>, <&tdmin_lb>,
+-				 <&dioo2133>;
+-		audio-routing = "TDMOUT_B IN 0", "FRDDR_A OUT 1",
+-				"TDMOUT_B IN 1", "FRDDR_B OUT 1",
+-				"TDMOUT_B IN 2", "FRDDR_C OUT 1",
+-				"TDM_B Playback", "TDMOUT_B OUT",
+-				"TDMOUT_C IN 0", "FRDDR_A OUT 2",
+-				"TDMOUT_C IN 1", "FRDDR_B OUT 2",
+-				"TDMOUT_C IN 2", "FRDDR_C OUT 2",
+-				"TDM_C Playback", "TDMOUT_C OUT",
+-				"TDMIN_A IN 4", "TDM_B Loopback",
+-				"TDMIN_B IN 4", "TDM_B Loopback",
+-				"TDMIN_C IN 4", "TDM_B Loopback",
+-				"TDMIN_LB IN 1", "TDM_B Loopback",
+-				"TDMIN_A IN 5", "TDM_C Loopback",
+-				"TDMIN_B IN 5", "TDM_C Loopback",
+-				"TDMIN_C IN 5", "TDM_C Loopback",
+-				"TDMIN_LB IN 2", "TDM_C Loopback",
+-				"TODDR_A IN 0", "TDMIN_A OUT",
+-				"TODDR_B IN 0", "TDMIN_A OUT",
+-				"TODDR_C IN 0", "TDMIN_A OUT",
+-				"TODDR_A IN 1", "TDMIN_B OUT",
+-				"TODDR_B IN 1", "TDMIN_B OUT",
+-				"TODDR_C IN 1", "TDMIN_B OUT",
+-				"TODDR_A IN 2", "TDMIN_C OUT",
+-				"TODDR_B IN 2", "TDMIN_C OUT",
+-				"TODDR_C IN 2", "TDMIN_C OUT",
+-				"TODDR_A IN 6", "TDMIN_LB OUT",
+-				"TODDR_B IN 6", "TDMIN_LB OUT",
+-				"TODDR_C IN 6", "TDMIN_LB OUT",
+-				"U19 INL", "ACODEC LOLP",
+-				"U19 INR", "ACODEC LORP",
+-				"Lineout", "U19 OUTL",
+-				"Lineout", "U19 OUTR";
+-
+-		assigned-clocks = <&clkc CLKID_MPLL2>,
+-				  <&clkc CLKID_MPLL0>,
+-				  <&clkc CLKID_MPLL1>;
+-		assigned-clock-parents = <0>, <0>, <0>;
+-		assigned-clock-rates = <294912000>,
+-				       <270950400>,
+-				       <393216000>;
+-		status = "okay";
+-
+-		dai-link-0 {
+-			sound-dai = <&frddr_a>;
+-		};
+-
+-		dai-link-1 {
+-			sound-dai = <&frddr_b>;
+-		};
+-
+-		dai-link-2 {
+-			sound-dai = <&frddr_c>;
+-		};
+-
+-		dai-link-3 {
+-			sound-dai = <&toddr_a>;
+-		};
+-
+-		dai-link-4 {
+-			sound-dai = <&toddr_b>;
+-		};
+-
+-		dai-link-5 {
+-			sound-dai = <&toddr_c>;
+-		};
+-
+-		/* 8ch hdmi interface */
+-		dai-link-6 {
+-			sound-dai = <&tdmif_b>;
+-			dai-format = "i2s";
+-			dai-tdm-slot-tx-mask-0 = <1 1>;
+-			dai-tdm-slot-tx-mask-1 = <1 1>;
+-			dai-tdm-slot-tx-mask-2 = <1 1>;
+-			dai-tdm-slot-tx-mask-3 = <1 1>;
+-			mclk-fs = <256>;
+-
+-			codec-0 {
+-				sound-dai = <&tohdmitx TOHDMITX_I2S_IN_B>;
+-			};
+-
+-			codec-1 {
+-				sound-dai = <&toacodec TOACODEC_IN_B>;
+-			};
+-		};
+-
+-		/* i2s jack output interface */
+-		dai-link-7 {
+-			sound-dai = <&tdmif_c>;
+-			dai-format = "i2s";
+-			dai-tdm-slot-tx-mask-0 = <1 1>;
+-			mclk-fs = <256>;
+-
+-			codec-0 {
+-				sound-dai = <&tohdmitx TOHDMITX_I2S_IN_C>;
+-			};
+-
+-			codec-1 {
+-				sound-dai = <&toacodec TOACODEC_IN_C>;
+-			};
+-		};
+-
+-		/* hdmi glue */
+-		dai-link-8 {
+-			sound-dai = <&tohdmitx TOHDMITX_I2S_OUT>;
+-
+-			codec {
+-				sound-dai = <&hdmi_tx>;
+-			};
+-		};
+-
+-		/* acodec glue */
+-		dai-link-9 {
+-			sound-dai = <&toacodec TOACODEC_OUT>;
+-
+-			codec {
+-				sound-dai = <&acodec>;
+-			};
+-		};
+-	};
+-};
+-
+-&acodec {
+-	AVDD-supply = <&vddao_1v8>;
+-	status = "okay";
+-};
+-
+-&arb {
+-	status = "okay";
+-};
+-
+-&cec_AO {
+-	pinctrl-0 = <&cec_ao_a_h_pins>;
+-	pinctrl-names = "default";
+-	status = "disabled";
+-	hdmi-phandle = <&hdmi_tx>;
+-};
+-
+-&cecb_AO {
+-	pinctrl-0 = <&cec_ao_b_h_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+-	hdmi-phandle = <&hdmi_tx>;
+-};
+-
+-&clkc_audio {
+-	status = "okay";
+-};
+-
+-&cpu0 {
+-	cpu-supply = <&vddcpu_b>;
+-	operating-points-v2 = <&cpu_opp_table_0>;
+-	clocks = <&clkc CLKID_CPU_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&cpu1 {
+-	cpu-supply = <&vddcpu_b>;
+-	operating-points-v2 = <&cpu_opp_table_0>;
+-	clocks = <&clkc CLKID_CPU_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&cpu100 {
+-	cpu-supply = <&vddcpu_a>;
+-	operating-points-v2 = <&cpub_opp_table_1>;
+-	clocks = <&clkc CLKID_CPUB_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&cpu101 {
+-	cpu-supply = <&vddcpu_a>;
+-	operating-points-v2 = <&cpub_opp_table_1>;
+-	clocks = <&clkc CLKID_CPUB_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&cpu102 {
+-	cpu-supply = <&vddcpu_a>;
+-	operating-points-v2 = <&cpub_opp_table_1>;
+-	clocks = <&clkc CLKID_CPUB_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&cpu103 {
+-	cpu-supply = <&vddcpu_a>;
+-	operating-points-v2 = <&cpub_opp_table_1>;
+-	clocks = <&clkc CLKID_CPUB_CLK>;
+-	clock-latency = <50000>;
+-};
+-
+-&ext_mdio {
+-	external_phy: ethernet-phy@0 {
+-		/* Realtek RTL8211F (0x001cc916) */	
+-		reg = <0>;
+-		max-speed = <1000>;
+-
+-		reset-assert-us = <10000>;
+-		reset-deassert-us = <30000>;
+-		reset-gpios = <&gpio GPIOZ_15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+-
+-		interrupt-parent = <&gpio_intc>;
+-		/* MAC_INTR on GPIOZ_14 */
+-		interrupts = <26 IRQ_TYPE_LEVEL_LOW>;
+-	};
+-};
+-
+-&ethmac {
+-	pinctrl-0 = <&eth_pins>, <&eth_rgmii_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+-	phy-mode = "rgmii";
+-	phy-handle = <&external_phy>;
+-	amlogic,tx-delay-ns = <2>;
+-};
+-
+-&frddr_a {
+-	status = "okay";
+-};
+-
+-&frddr_b {
+-	status = "okay";
+-};
+-
+-&frddr_c {
+-	status = "okay";
+-};
+-
+-&gpio {
+-	/*
+-	 * WARNING: The USB Hub on the Odroid-N2 needs a reset signal
+-	 * to be turned high in order to be detected by the USB Controller
+-	 * This signal should be handled by a USB specific power sequence
+-	 * in order to reset the Hub when USB bus is powered down.
+-	 */
+-	usb-hub {
+-		gpio-hog;
+-		gpios = <GPIOH_4 GPIO_ACTIVE_HIGH>;
+-		output-high;
+-		line-name = "usb-hub-reset";
+-	};
+-};
+-
+-&hdmi_tx {
+-	status = "okay";
+-	pinctrl-0 = <&hdmitx_hpd_pins>, <&hdmitx_ddc_pins>;
+-	pinctrl-names = "default";
+-	hdmi-supply = <&vcc_5v>;
+-};
+-
+-&hdmi_tx_tmds_port {
+-	hdmi_tx_tmds_out: endpoint {
+-		remote-endpoint = <&hdmi_connector_in>;
+-	};
+-};
+-
+-&ir {
+-	status = "okay";
+-	pinctrl-0 = <&remote_input_ao_pins>;
+-	pinctrl-names = "default";
+-	linux,rc-map-name = "rc-odroid";
+-};
+-
+-&pwm_ab {
+-	pinctrl-0 = <&pwm_a_e_pins>;
+-	pinctrl-names = "default";
+-	clocks = <&xtal>;
+-	clock-names = "clkin0";
+-	status = "okay";
+-};
+-
+-&pwm_AO_cd {
+-	pinctrl-0 = <&pwm_ao_d_e_pins>;
+-	pinctrl-names = "default";
+-	clocks = <&xtal>;
+-	clock-names = "clkin1";
+-	status = "okay";
+-};
+-
+-/* SD card */
+-&sd_emmc_b {
+-	status = "okay";
+-	pinctrl-0 = <&sdcard_c_pins>;
+-	pinctrl-1 = <&sdcard_clk_gate_c_pins>;
+-	pinctrl-names = "default", "clk-gate";
+-
+-	bus-width = <4>;
+-	cap-sd-highspeed;
+-	max-frequency = <50000000>;
+-	disable-wp;
+-
+-	cd-gpios = <&gpio GPIOC_6 GPIO_ACTIVE_LOW>;
+-	vmmc-supply = <&tflash_vdd>;
+-	vqmmc-supply = <&tf_io>;
+-
+-};
+-
+-/* eMMC */
+-&sd_emmc_c {
+-	status = "okay";
+-	pinctrl-0 = <&emmc_ctrl_pins>, <&emmc_data_8b_pins>, <&emmc_ds_pins>;
+-	pinctrl-1 = <&emmc_clk_gate_pins>;
+-	pinctrl-names = "default", "clk-gate";
+-
+-	bus-width = <8>;
+-	cap-mmc-highspeed;
+-	mmc-ddr-1_8v;
+-	mmc-hs200-1_8v;
+-	max-frequency = <200000000>;
+-	disable-wp;
+-
+-	mmc-pwrseq = <&emmc_pwrseq>;
+-	vmmc-supply = <&vcc_3v3>;
+-	vqmmc-supply = <&flash_1v8>;
+-};
+-
+-/*
+- * EMMC_D4, EMMC_D5, EMMC_D6 and EMMC_D7 pins are shared between SPI NOR pins
+- * and eMMC Data 4 to 7 pins.
+- * Replace emmc_data_8b_pins to emmc_data_4b_pins from sd_emmc_c pinctrl-0,
+- * and change bus-width to 4 then spifc can be enabled.
+- * The SW1 slide should also be set to the correct position.
+- */
+-&spifc {
+-	status = "disabled";
+-	pinctrl-0 = <&nor_pins>;
+-	pinctrl-names = "default";
+-
+-	mx25u64: spi-flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		compatible = "mxicy,mx25u6435f", "jedec,spi-nor";
+-		reg = <0>;
+-		spi-max-frequency = <104000000>;
+-	};
+-};
+-
+-&tdmif_b {
+-	status = "okay";
+-};
+-
+-&tdmif_c {
+-	status = "okay";
+-};
+-
+-&tdmin_a {
+-	status = "okay";
+-};
+-
+-&tdmin_b {
+-	status = "okay";
+-};
+-
+-&tdmin_c {
+-	status = "okay";
+-};
+-
+-&tdmin_lb {
+-	status = "okay";
+-};
+-
+-&tdmout_b {
+-	status = "okay";
+-};
+-
+-&tdmout_c {
+-	status = "okay";
+-};
+-
+-&toacodec {
+-	status = "okay";
+-};
+-
+-&tohdmitx {
+-	status = "okay";
+-};
+-
+-&toddr_a {
+-	status = "okay";
+-};
+-
+-&toddr_b {
+-	status = "okay";
+-};
+-
+-&toddr_c {
+-	status = "okay";
+-};
+-
+-&uart_AO {
+-	status = "okay";
+-	pinctrl-0 = <&uart_ao_a_pins>;
+-	pinctrl-names = "default";
+-};
+-
+-&usb {
+-	status = "okay";
+-	vbus-supply = <&usb_pwr_en>;
+-};
+-
+-&usb2_phy0 {
+-	phy-supply = <&vcc_5v>;
+-};
+-
+-&usb2_phy1 {
+-	/* Enable the hub which is connected to this port */
+-	phy-supply = <&hub_5v>;
+ };
+diff --git a/arch/arm64/boot/dts/amlogic/meson-g12b.dtsi b/arch/arm64/boot/dts/amlogic/meson-g12b.dtsi
+index 9b8548e5f6e5..ee8fcae9f9f0 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-g12b.dtsi
++++ b/arch/arm64/boot/dts/amlogic/meson-g12b.dtsi
+@@ -135,3 +135,7 @@
+ 		};
+ 	};
+ };
++
++&mali {
++	dma-coherent;
++};
+diff --git a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+index 70fcfb7b0683..9d8c919c6e19 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+@@ -9,6 +9,7 @@
+ 
+ #include "meson-gxbb.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/sound/meson-aiu.h>
+ 
+ / {
+ 	compatible = "hardkernel,odroid-c2", "amlogic,meson-gxbb";
+@@ -172,6 +173,45 @@
+ 			};
+ 		};
+ 	};
++
++	sound {
++		compatible = "amlogic,gx-sound-card";
++		model = "GXBB-ODROID-C2";
++		assigned-clocks = <&clkc CLKID_MPLL0>,
++				  <&clkc CLKID_MPLL1>,
++				  <&clkc CLKID_MPLL2>;
++		assigned-clock-parents = <0>, <0>, <0>;
++		assigned-clock-rates = <294912000>,
++				       <270950400>,
++				       <393216000>;
++		status = "okay";
++
++		dai-link-0 {
++			sound-dai = <&aiu AIU_CPU CPU_I2S_FIFO>;
++		};
++
++		dai-link-1 {
++			sound-dai = <&aiu AIU_CPU CPU_I2S_ENCODER>;
++			dai-format = "i2s";
++			mclk-fs = <256>;
++
++			codec-0 {
++				sound-dai = <&aiu AIU_HDMI CTRL_I2S>;
++			};
++		};
++
++		dai-link-2 {
++			sound-dai = <&aiu AIU_HDMI CTRL_OUT>;
++
++			codec-0 {
++				sound-dai = <&hdmi_tx>;
++			};
++		};
++	};
++};
++
++&aiu {
++	status = "okay";
+ };
+ 
+ &cec_AO {
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index b87b1f773083..1e7e8a5f78b5 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -33,7 +33,10 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-pinebook-pro.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-puma-haikou.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-roc-pc.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-roc-pc-mezzanine.dtb
+-dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rock-pi-4.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rock-pi-4a.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rock-pi-4b.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rock-pi-4c.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-station-p1.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rock960.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rockpro64-v2.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-rockpro64.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+index 86cfb5c50a94..26000ce15ffc 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+@@ -11,9 +11,36 @@
+ 	compatible = "pine64,rock64", "rockchip,rk3328";
+ 
+ 	chosen {
++		bootargs = "earlycon=uart8250,mmio32,0xff130000";
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
++	leds {
++		compatible = "gpio-leds";
++
++		standby-led {
++			linux,default-trigger = "disk-activity";
++			gpios = <&rk805 0 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		power-led {
++			gpios = <&rk805 1 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		usb-switch {
++			linux,default-trigger = "none";
++			gpios = <&gpio0 2 1>;
++			mode = <0x23>;
++			default-state = "on";
++		};
++	};
++
+ 	gmac_clkin: external-gmac-clock {
+ 		compatible = "fixed-clock";
+ 		clock-frequency = <125000000>;
+@@ -45,7 +72,8 @@
+ 
+ 	vcc_host1_5v: vcc_otg_5v: vcc-host1-5v-regulator {
+ 		compatible = "regulator-fixed";
+-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
++		enable-active-high;
++		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&usb20_host_drv>;
+ 		regulator-name = "vcc_host1_5v";
+@@ -87,7 +115,8 @@
+ 	sound {
+ 		compatible = "audio-graph-card";
+ 		label = "rockchip,rk3328";
+-		dais = <&i2s1_p0
++		dais = <&i2s0_p0
++			&i2s1_p0
+ 			&spdif_p0>;
+ 	};
+ 
+@@ -131,15 +160,19 @@
+ };
+ 
+ &emmc {
++	max-frequency = <200000000>;
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
+ 	mmc-hs200-1_8v;
+ 	non-removable;
++	num-slots = <1>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&emmc_clk &emmc_cmd &emmc_bus8>;
+-	vmmc-supply = <&vcc_io>;
+-	vqmmc-supply = <&vcc18_emmc>;
+ 	status = "okay";
++	supports-emmc;
++	clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
++	         <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
++	clock-names = "biu", "ciu", "ciu-drv", "ciu-sample";
+ };
+ 
+ &gmac2io {
+@@ -161,12 +194,30 @@
+ 
+ &hdmi {
+ 	status = "okay";
++
++	port@0 {
++		hdmi_p0_0: endpoint {
++			remote-endpoint = <&i2s0_p0_0>;
++		};
++	};
+ };
+ 
+ &hdmiphy {
+ 	status = "okay";
+ };
+ 
++&i2s0 {
++	status = "okay";
++
++	i2s0_p0: port {
++		i2s0_p0_0: endpoint {
++			dai-format = "i2s";
++			mclk-fs = <256>;
++			remote-endpoint = <&hdmi_p0_0>;
++		};
++	};
++};
++
+ &i2c1 {
+ 	status = "okay";
+ 
+@@ -278,6 +329,18 @@
+ 	};
+ };
+ 
++&i2s0 {
++	status = "okay";
++
++	i2s0_p0: port {
++		i2s0_p0_0: endpoint {
++			dai-format = "i2s";
++			mclk-fs = <256>;
++			remote-endpoint = <&hdmi_p0_0>;
++		};
++	};
++};
++
+ &i2s1 {
+ 	status = "okay";
+ 
+@@ -326,11 +389,14 @@
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
++	cd-gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
+ 	disable-wp;
+ 	max-frequency = <150000000>;
++	num-slots = <1>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_dectn &sdmmc0_bus4>;
+ 	vmmc-supply = <&vcc_sd>;
++	vqmmc-supply = <&vcc_sd>;
+ 	status = "okay";
+ };
+ 
+@@ -349,11 +415,23 @@
+ 	status = "okay";
+ 
+ 	spiflash@0 {
+-		compatible = "jedec,spi-nor";
++		compatible = "gigadevice,gd25q128", "jedec,spi-nor";
+ 		reg = <0>;
++		m25p,fast-read;
+ 
+ 		/* maximum speed for Rockchip SPI */
+ 		spi-max-frequency = <50000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x8000 0x3F0000>;
++			};
++		};
+ 	};
+ };
+ 
+@@ -365,18 +443,21 @@
+ 
+ &uart2 {
+ 	status = "okay";
++
++	/delete-property/ dmas;
++	/delete-property/ dma-names;
+ };
+ 
+ &u2phy {
+ 	status = "okay";
++};
+ 
+-	u2phy_host: host-port {
+-		status = "okay";
+-	};
++&u2phy_host {
++	status = "okay";
++};
+ 
+-	u2phy_otg: otg-port {
+-		status = "okay";
+-	};
++&u2phy_otg {
++	status = "okay";
+ };
+ 
+ &usb20_otg {
+@@ -392,6 +473,15 @@
+ 	status = "okay";
+ };
+ 
++&usbdrd3 {
++	status = "okay";
++};
++
++&usbdrd_dwc3 {
++	dr_mode = "host";
++	status = "okay";
++};
++
+ &vop {
+ 	status = "okay";
+ };
+@@ -399,3 +489,42 @@
+ &vop_mmu {
+ 	status = "okay";
+ };
++
++&usbdrd3 {
++	status = "okay";
++};
++
++&usbdrd_dwc3 {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++
++	/* SPI DMA does not work currently */
++	/delete-property/ dmas;
++	/delete-property/ #dma-cells;
++	/delete-property/ dma-names;
++
++	 spi-flash@0 {
++		#address-cells = <0x1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		reg = <0x0>;
++		spi-max-frequency = <25000000>;
++		status = "okay";
++		m25p,fast-read;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x8000 0x3F0000>;
++			};
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328.dtsi b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+index bbdb19a3e85d..6fe83c2e5d83 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3328.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+@@ -27,6 +27,8 @@
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		mmc0 = &emmc;
++		mmc1 = &sdmmc;
+ 		ethernet0 = &gmac2io;
+ 		ethernet1 = &gmac2phy;
+ 	};
+@@ -853,12 +855,12 @@
+ 		};
+ 	};
+ 
+-	sdmmc: mmc@ff500000 {
++	emmc: mmc@ff520000 {
+ 		compatible = "rockchip,rk3328-dw-mshc", "rockchip,rk3288-dw-mshc";
+-		reg = <0x0 0xff500000 0x0 0x4000>;
+-		interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cru HCLK_SDMMC>, <&cru SCLK_SDMMC>,
+-			 <&cru SCLK_SDMMC_DRV>, <&cru SCLK_SDMMC_SAMPLE>;
++		reg = <0x0 0xff520000 0x0 0x4000>;
++		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
++			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
+ 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
+ 		fifo-depth = <0x100>;
+ 		max-frequency = <150000000>;
+@@ -877,12 +879,12 @@
+ 		status = "disabled";
+ 	};
+ 
+-	emmc: mmc@ff520000 {
++	sdmmc: mmc@ff500000 {
+ 		compatible = "rockchip,rk3328-dw-mshc", "rockchip,rk3288-dw-mshc";
+-		reg = <0x0 0xff520000 0x0 0x4000>;
+-		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
+-			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
++		reg = <0x0 0xff500000 0x0 0x4000>;
++		interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_SDMMC>, <&cru SCLK_SDMMC>,
++			 <&cru SCLK_SDMMC_DRV>, <&cru SCLK_SDMMC_SAMPLE>;
+ 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
+ 		fifo-depth = <0x100>;
+ 		max-frequency = <150000000>;
+@@ -983,6 +985,33 @@
+ 		status = "disabled";
+ 	};
+ 
++	usbdrd3: usb@ff600000 {
++		compatible = "rockchip,rk3328-dwc3", "rockchip,rk3399-dwc3";
++		clocks = <&cru SCLK_USB3OTG_REF>, <&cru SCLK_USB3OTG_SUSPEND>,
++			 <&cru ACLK_USB3OTG>;
++		clock-names = "ref_clk", "suspend_clk",
++			      "bus_clk";
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++		status = "disabled";
++
++		usbdrd_dwc3: dwc3@ff600000 {
++			compatible = "snps,dwc3";
++			reg = <0x0 0xff600000 0x0 0x100000>;
++			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++			dr_mode = "otg";
++			phy_type = "utmi_wide";
++			snps,dis_enblslpm_quirk;
++			snps,dis-u2-freeclk-exists-quirk;
++			snps,dis_u2_susphy_quirk;
++			snps,dis_u3_susphy_quirk;
++			snps,dis-del-phy-power-chg-quirk;
++			snps,dis-tx-ipgap-linecheck-quirk;
++			status = "disabled";
++		};
++	};
++
+ 	gic: interrupt-controller@ff811000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-pinebook-pro.dts b/arch/arm64/boot/dts/rockchip/rk3399-pinebook-pro.dts
+index 06d48338c836..9e66fa086808 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-pinebook-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-pinebook-pro.dts
+@@ -19,9 +19,15 @@
+ 	compatible = "pine64,pinebook-pro", "rockchip,rk3399";
+ 
+ 	chosen {
++		bootargs = "earlycon=uart8250,mmio32,0xff1a0000";
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
++	memory {
++		device_type = "memory";
++		reg = <0x0 0x00200000 0x0 0xf7e00000>;
++	};
++
+ 	backlight: edp-backlight {
+ 		compatible = "pwm-backlight";
+ 		power-supply = <&vcc_12v>;
+@@ -104,7 +110,8 @@
+ 			default-state = "on";
+ 			function = LED_FUNCTION_POWER;
+ 			gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
+-			label = "green:power";
++			label = "green:disk-activity";
++			linux,default-trigger = "mmc2-inverted";
+ 		};
+ 
+ 		red_led: led-1 {
+@@ -132,6 +139,12 @@
+ 		reset-gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_LOW>;
+ 	};
+ 
++	/* first 128k(0xff8d0000~0xff8f0000) for ddr and ATF */
++	sram@ff8d0000 {
++		compatible = "mmio-sram";
++		reg = <0x0 0xff8d0000 0x0 0x20000>; /* 128k */
++	};
++
+ 	/* Audio components */
+ 	es8316-sound {
+ 		compatible = "simple-audio-card";
+@@ -379,8 +392,16 @@
+ 	};
+ };
+ 
++&cluster1_opp {
++	opp08 {
++		opp-hz = /bits/ 64 <2000000000>;
++		opp-microvolt = <1300000>;
++	};
++};
++
+ &cdn_dp {
+ 	status = "okay";
++	extcon = <&fusb0>;
+ };
+ 
+ &cpu_b0 {
+@@ -705,7 +726,7 @@
+ 
+ 		connector {
+ 			compatible = "usb-c-connector";
+-			data-role = "host";
++			data-role = "dual";
+ 			label = "USB-C";
+ 			op-sink-microwatt = <1000000>;
+ 			power-role = "dual";
+@@ -715,6 +736,9 @@
+ 				<PDO_FIXED(5000, 1400, PDO_FIXED_USB_COMM)>;
+ 			try-power-role = "sink";
+ 
++			extcon-cables = <1 2 5 6 9 10 12 44>;
++			typec-altmodes = <0xff01 1 0x001c0c00 1>;
++
+ 			ports {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+@@ -790,7 +814,7 @@
+ &pcie0 {
+ 	bus-scan-delay-ms = <1000>;
+ 	ep-gpios = <&gpio2 RK_PD4 GPIO_ACTIVE_HIGH>;
+-	max-link-speed = <2>;
++	max-link-speed = <1>;
+ 	num-lanes = <4>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie_clkreqn_cpm>;
+@@ -930,6 +954,29 @@
+ 	status = "okay";
+ };
+ 
++&rockchip_suspend {
++	status = "okay";
++	rockchip,sleep-debug-en = <1>;
++	rockchip,sleep-mode-config = <
++		(0
++		| RKPM_SLP_ARMPD
++		| RKPM_SLP_PERILPPD
++		| RKPM_SLP_DDR_RET
++		| RKPM_SLP_PLLPD
++		| RKPM_SLP_CENTER_PD
++		| RKPM_SLP_AP_PWROFF
++		)
++	>;
++	rockchip,pwm-regulator-config = <
++		(0
++		| PWM2_REGULATOR_EN
++		)
++	>;
++	rockchip,power-ctrl =
++		<&gpio1 RK_PC1 GPIO_ACTIVE_HIGH>,
++		<&gpio1 RK_PB6 GPIO_ACTIVE_HIGH>;
++};
++
+ &saradc {
+ 	vref-supply = <&vcca1v8_s3>;
+ 	status = "okay";
+@@ -982,6 +1029,7 @@
+ };
+ 
+ &tcphy0 {
++	extcon = <&fusb0>;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-rock-pi-4.dts b/arch/arm64/boot/dts/rockchip/rk3399-rock-pi-4.dts
+deleted file mode 100644
+index 60f98a3e19d8..000000000000
+--- a/arch/arm64/boot/dts/rockchip/rk3399-rock-pi-4.dts
++++ /dev/null
+@@ -1,735 +0,0 @@
+-// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+-/*
+- * Copyright (c) 2019 Akash Gajjar <Akash_Gajjar@mentor.com>
+- * Copyright (c) 2019 Pragnesh Patel <Pragnesh_Patel@mentor.com>
+- */
+-
+-/dts-v1/;
+-#include <dt-bindings/input/linux-event-codes.h>
+-#include <dt-bindings/pwm/pwm.h>
+-#include "rk3399.dtsi"
+-#include "rk3399-opp.dtsi"
+-
+-/ {
+-	model = "Radxa ROCK Pi 4";
+-	compatible = "radxa,rockpi4", "rockchip,rk3399";
+-
+-	chosen {
+-		stdout-path = "serial2:1500000n8";
+-	};
+-
+-	clkin_gmac: external-gmac-clock {
+-		compatible = "fixed-clock";
+-		clock-frequency = <125000000>;
+-		clock-output-names = "clkin_gmac";
+-		#clock-cells = <0>;
+-	};
+-
+-	sdio_pwrseq: sdio-pwrseq {
+-		compatible = "mmc-pwrseq-simple";
+-		clocks = <&rk808 1>;
+-		clock-names = "ext_clock";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&wifi_enable_h>;
+-		reset-gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_LOW>;
+-	};
+-
+-	vcc12v_dcin: dc-12v {
+-		compatible = "regulator-fixed";
+-		regulator-name = "vcc12v_dcin";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <12000000>;
+-		regulator-max-microvolt = <12000000>;
+-	};
+-
+-	vcc5v0_sys: vcc-sys {
+-		compatible = "regulator-fixed";
+-		regulator-name = "vcc5v0_sys";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		vin-supply = <&vcc12v_dcin>;
+-	};
+-
+-	vcc_0v9: vcc-0v9 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "vcc_0v9";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <900000>;
+-		regulator-max-microvolt = <900000>;
+-		vin-supply = <&vcc3v3_sys>;
+-	};
+-
+-	vcc3v3_pcie: vcc3v3-pcie-regulator {
+-		compatible = "regulator-fixed";
+-		enable-active-high;
+-		gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pcie_pwr_en>;
+-		regulator-name = "vcc3v3_pcie";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		vin-supply = <&vcc5v0_sys>;
+-	};
+-
+-	vcc3v3_sys: vcc3v3-sys {
+-		compatible = "regulator-fixed";
+-		regulator-name = "vcc3v3_sys";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		vin-supply = <&vcc5v0_sys>;
+-	};
+-
+-	vcc5v0_host: vcc5v0-host-regulator {
+-		compatible = "regulator-fixed";
+-		enable-active-high;
+-		gpio = <&gpio4 RK_PD1 GPIO_ACTIVE_HIGH>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&vcc5v0_host_en>;
+-		regulator-name = "vcc5v0_host";
+-		regulator-always-on;
+-		vin-supply = <&vcc5v0_sys>;
+-	};
+-
+-	vcc5v0_typec: vcc5v0-typec-regulator {
+-		compatible = "regulator-fixed";
+-		enable-active-high;
+-		gpio = <&gpio1 RK_PA3 GPIO_ACTIVE_HIGH>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&vcc5v0_typec_en>;
+-		regulator-name = "vcc5v0_typec";
+-		regulator-always-on;
+-		vin-supply = <&vcc5v0_sys>;
+-	};
+-
+-	vcc_lan: vcc3v3-phy-regulator {
+-		compatible = "regulator-fixed";
+-		regulator-name = "vcc_lan";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-
+-		regulator-state-mem {
+-			regulator-off-in-suspend;
+-		};
+-	};
+-
+-	vdd_log: vdd-log {
+-		compatible = "pwm-regulator";
+-		pwms = <&pwm2 0 25000 1>;
+-		regulator-name = "vdd_log";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		regulator-min-microvolt = <800000>;
+-		regulator-max-microvolt = <1400000>;
+-		vin-supply = <&vcc5v0_sys>;
+-	};
+-};
+-
+-&cpu_l0 {
+-	cpu-supply = <&vdd_cpu_l>;
+-};
+-
+-&cpu_l1 {
+-	cpu-supply = <&vdd_cpu_l>;
+-};
+-
+-&cpu_l2 {
+-	cpu-supply = <&vdd_cpu_l>;
+-};
+-
+-&cpu_l3 {
+-	cpu-supply = <&vdd_cpu_l>;
+-};
+-
+-&cpu_b0 {
+-	cpu-supply = <&vdd_cpu_b>;
+-};
+-
+-&cpu_b1 {
+-	cpu-supply = <&vdd_cpu_b>;
+-};
+-
+-&emmc_phy {
+-	status = "okay";
+-};
+-
+-&gmac {
+-	assigned-clocks = <&cru SCLK_RMII_SRC>;
+-	assigned-clock-parents = <&clkin_gmac>;
+-	clock_in_out = "input";
+-	phy-supply = <&vcc_lan>;
+-	phy-mode = "rgmii";
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&rgmii_pins>;
+-	snps,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+-	snps,reset-active-low;
+-	snps,reset-delays-us = <0 10000 50000>;
+-	tx_delay = <0x28>;
+-	rx_delay = <0x11>;
+-	status = "okay";
+-};
+-
+-&gpu {
+-	mali-supply = <&vdd_gpu>;
+-	status = "okay";
+-};
+-
+-&hdmi {
+-	ddc-i2c-bus = <&i2c3>;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&hdmi_cec>;
+-	status = "okay";
+-};
+-
+-&hdmi_sound {
+-	status = "okay";
+-};
+-
+-&i2c0 {
+-	clock-frequency = <400000>;
+-	i2c-scl-rising-time-ns = <168>;
+-	i2c-scl-falling-time-ns = <4>;
+-	status = "okay";
+-
+-	rk808: pmic@1b {
+-		compatible = "rockchip,rk808";
+-		reg = <0x1b>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <21 IRQ_TYPE_LEVEL_LOW>;
+-		#clock-cells = <1>;
+-		clock-output-names = "xin32k", "rk808-clkout2";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pmic_int_l>;
+-		rockchip,system-power-controller;
+-		wakeup-source;
+-
+-		vcc1-supply = <&vcc5v0_sys>;
+-		vcc2-supply = <&vcc5v0_sys>;
+-		vcc3-supply = <&vcc5v0_sys>;
+-		vcc4-supply = <&vcc5v0_sys>;
+-		vcc6-supply = <&vcc5v0_sys>;
+-		vcc7-supply = <&vcc5v0_sys>;
+-		vcc8-supply = <&vcc3v3_sys>;
+-		vcc9-supply = <&vcc5v0_sys>;
+-		vcc10-supply = <&vcc5v0_sys>;
+-		vcc11-supply = <&vcc5v0_sys>;
+-		vcc12-supply = <&vcc3v3_sys>;
+-		vddio-supply = <&vcc_1v8>;
+-
+-		regulators {
+-			vdd_center: DCDC_REG1 {
+-				regulator-name = "vdd_center";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <750000>;
+-				regulator-max-microvolt = <1350000>;
+-				regulator-ramp-delay = <6001>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vdd_cpu_l: DCDC_REG2 {
+-				regulator-name = "vdd_cpu_l";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <750000>;
+-				regulator-max-microvolt = <1350000>;
+-				regulator-ramp-delay = <6001>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcc_ddr: DCDC_REG3 {
+-				regulator-name = "vcc_ddr";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-				};
+-			};
+-
+-			vcc_1v8: DCDC_REG4 {
+-				regulator-name = "vcc_1v8";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <1800000>;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-					regulator-suspend-microvolt = <1800000>;
+-				};
+-			};
+-
+-			vcc1v8_codec: LDO_REG1 {
+-				regulator-name = "vcc1v8_codec";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <1800000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcc1v8_hdmi: LDO_REG2 {
+-				regulator-name = "vcc1v8_hdmi";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <1800000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcca_1v8: LDO_REG3 {
+-				regulator-name = "vcca_1v8";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <1800000>;
+-				regulator-max-microvolt = <1800000>;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-					regulator-suspend-microvolt = <1800000>;
+-				};
+-			};
+-
+-			vcc_sdio: LDO_REG4 {
+-				regulator-name = "vcc_sdio";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <3000000>;
+-				regulator-max-microvolt = <3000000>;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-					regulator-suspend-microvolt = <3000000>;
+-				};
+-			};
+-
+-			vcca3v0_codec: LDO_REG5 {
+-				regulator-name = "vcca3v0_codec";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <3000000>;
+-				regulator-max-microvolt = <3000000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcc_1v5: LDO_REG6 {
+-				regulator-name = "vcc_1v5";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <1500000>;
+-				regulator-max-microvolt = <1500000>;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-					regulator-suspend-microvolt = <1500000>;
+-				};
+-			};
+-
+-			vcc0v9_hdmi: LDO_REG7 {
+-				regulator-name = "vcc0v9_hdmi";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <900000>;
+-				regulator-max-microvolt = <900000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcc_3v0: LDO_REG8 {
+-				regulator-name = "vcc_3v0";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <3000000>;
+-				regulator-max-microvolt = <3000000>;
+-				regulator-state-mem {
+-					regulator-on-in-suspend;
+-					regulator-suspend-microvolt = <3000000>;
+-				};
+-			};
+-
+-			vcc_cam: SWITCH_REG1 {
+-				regulator-name = "vcc_cam";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <3300000>;
+-				regulator-max-microvolt = <3300000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-
+-			vcc_mipi: SWITCH_REG2 {
+-				regulator-name = "vcc_mipi";
+-				regulator-always-on;
+-				regulator-boot-on;
+-				regulator-min-microvolt = <3300000>;
+-				regulator-max-microvolt = <3300000>;
+-				regulator-state-mem {
+-					regulator-off-in-suspend;
+-				};
+-			};
+-		};
+-	};
+-
+-	vdd_cpu_b: regulator@40 {
+-		compatible = "silergy,syr827";
+-		reg = <0x40>;
+-		fcs,suspend-voltage-selector = <1>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&vsel1_pin>;
+-		regulator-name = "vdd_cpu_b";
+-		regulator-min-microvolt = <712500>;
+-		regulator-max-microvolt = <1500000>;
+-		regulator-ramp-delay = <1000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-		vin-supply = <&vcc5v0_sys>;
+-
+-		regulator-state-mem {
+-			regulator-off-in-suspend;
+-		};
+-	};
+-
+-	vdd_gpu: regulator@41 {
+-		compatible = "silergy,syr828";
+-		reg = <0x41>;
+-		fcs,suspend-voltage-selector = <1>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&vsel2_pin>;
+-		regulator-name = "vdd_gpu";
+-		regulator-min-microvolt = <712500>;
+-		regulator-max-microvolt = <1500000>;
+-		regulator-ramp-delay = <1000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-		vin-supply = <&vcc5v0_sys>;
+-
+-		regulator-state-mem {
+-			regulator-off-in-suspend;
+-		};
+-	};
+-};
+-
+-&i2c1 {
+-	i2c-scl-rising-time-ns = <300>;
+-	i2c-scl-falling-time-ns = <15>;
+-	status = "okay";
+-};
+-
+-&i2c3 {
+-	i2c-scl-rising-time-ns = <450>;
+-	i2c-scl-falling-time-ns = <15>;
+-	status = "okay";
+-};
+-
+-&i2c4 {
+-	i2c-scl-rising-time-ns = <600>;
+-	i2c-scl-falling-time-ns = <20>;
+-	status = "okay";
+-};
+-
+-&i2s0 {
+-	rockchip,playback-channels = <8>;
+-	rockchip,capture-channels = <8>;
+-	status = "okay";
+-};
+-
+-&i2s1 {
+-	rockchip,playback-channels = <2>;
+-	rockchip,capture-channels = <2>;
+-	status = "okay";
+-};
+-
+-&i2s2 {
+-	status = "okay";
+-};
+-
+-&io_domains {
+-	status = "okay";
+-
+-	bt656-supply = <&vcc_3v0>;
+-	audio-supply = <&vcc_3v0>;
+-	sdmmc-supply = <&vcc_sdio>;
+-	gpio1830-supply = <&vcc_3v0>;
+-};
+-
+-&pmu_io_domains {
+-	status = "okay";
+-
+-	pmu1830-supply = <&vcc_3v0>;
+-};
+-
+-&pcie_phy {
+-	status = "okay";
+-};
+-
+-&pcie0 {
+-	ep-gpios = <&gpio4 RK_PD3 GPIO_ACTIVE_HIGH>;
+-	max-link-speed = <2>;
+-	num-lanes = <4>;
+-	pinctrl-0 = <&pcie_clkreqnb_cpm>;
+-	pinctrl-names = "default";
+-	vpcie0v9-supply = <&vcc_0v9>;
+-	vpcie1v8-supply = <&vcc_1v8>;
+-	vpcie3v3-supply = <&vcc3v3_pcie>;
+-	status = "okay";
+-};
+-
+-&pinctrl {
+-	bt {
+-		bt_enable_h: bt-enable-h {
+-			rockchip,pins = <0 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-
+-		bt_host_wake_l: bt-host-wake-l {
+-			rockchip,pins = <0 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-
+-		bt_wake_l: bt-wake-l {
+-			rockchip,pins = <2 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-	};
+-
+-	pcie {
+-		pcie_pwr_en: pcie-pwr-en {
+-			rockchip,pins = <2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-	};
+-
+-	sdio0 {
+-		sdio0_bus4: sdio0-bus4 {
+-			rockchip,pins = <2 RK_PC4 1 &pcfg_pull_up_20ma>,
+-					<2 RK_PC5 1 &pcfg_pull_up_20ma>,
+-					<2 RK_PC6 1 &pcfg_pull_up_20ma>,
+-					<2 RK_PC7 1 &pcfg_pull_up_20ma>;
+-		};
+-
+-		sdio0_cmd: sdio0-cmd {
+-			rockchip,pins = <2 RK_PD0 1 &pcfg_pull_up_20ma>;
+-		};
+-
+-		sdio0_clk: sdio0-clk {
+-			rockchip,pins = <2 RK_PD1 1 &pcfg_pull_none_20ma>;
+-		};
+-	};
+-
+-	pmic {
+-		pmic_int_l: pmic-int-l {
+-			rockchip,pins = <1 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>;
+-		};
+-
+-		vsel1_pin: vsel1-pin {
+-			rockchip,pins = <1 RK_PC1 RK_FUNC_GPIO &pcfg_pull_down>;
+-		};
+-
+-		vsel2_pin: vsel2-pin {
+-			rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_down>;
+-		};
+-	};
+-
+-	usb-typec {
+-		vcc5v0_typec_en: vcc5v0-typec-en {
+-			rockchip,pins = <1 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
+-		};
+-	};
+-
+-	usb2 {
+-		vcc5v0_host_en: vcc5v0-host-en {
+-			rockchip,pins = <4 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-	};
+-
+-	wifi {
+-		wifi_enable_h: wifi-enable-h {
+-			rockchip,pins = <0 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-
+-		wifi_host_wake_l: wifi-host-wake-l {
+-			rockchip,pins = <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-	};
+-};
+-
+-&pwm2 {
+-	status = "okay";
+-};
+-
+-&saradc {
+-	status = "okay";
+-
+-	vref-supply = <&vcc_1v8>;
+-};
+-
+-&sdio0 {
+-	#address-cells = <1>;
+-	#size-cells = <0>;
+-	bus-width = <4>;
+-	clock-frequency = <50000000>;
+-	cap-sdio-irq;
+-	cap-sd-highspeed;
+-	keep-power-in-suspend;
+-	mmc-pwrseq = <&sdio_pwrseq>;
+-	non-removable;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&sdio0_bus4 &sdio0_cmd &sdio0_clk>;
+-	sd-uhs-sdr104;
+-	status = "okay";
+-
+-	brcmf: wifi@1 {
+-		compatible = "brcm,bcm4329-fmac";
+-		reg = <1>;
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <RK_PA3 GPIO_ACTIVE_HIGH>;
+-		interrupt-names = "host-wake";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&wifi_host_wake_l>;
+-	};
+-};
+-
+-&sdmmc {
+-	bus-width = <4>;
+-	cap-mmc-highspeed;
+-	cap-sd-highspeed;
+-	cd-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
+-	disable-wp;
+-	max-frequency = <150000000>;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&sdmmc_clk &sdmmc_cd &sdmmc_cmd &sdmmc_bus4>;
+-	status = "okay";
+-};
+-
+-&sdhci {
+-	bus-width = <8>;
+-	mmc-hs400-1_8v;
+-	mmc-hs400-enhanced-strobe;
+-	non-removable;
+-	status = "okay";
+-};
+-
+-&tcphy0 {
+-	status = "okay";
+-};
+-
+-&tcphy1 {
+-	status = "okay";
+-};
+-
+-&tsadc {
+-	status = "okay";
+-
+-	/* tshut mode 0:CRU 1:GPIO */
+-	rockchip,hw-tshut-mode = <1>;
+-	/* tshut polarity 0:LOW 1:HIGH */
+-	rockchip,hw-tshut-polarity = <1>;
+-};
+-
+-&u2phy0 {
+-	status = "okay";
+-
+-	u2phy0_otg: otg-port {
+-		status = "okay";
+-	};
+-
+-	u2phy0_host: host-port {
+-		phy-supply = <&vcc5v0_host>;
+-		status = "okay";
+-	};
+-};
+-
+-&u2phy1 {
+-	status = "okay";
+-
+-	u2phy1_otg: otg-port {
+-		status = "okay";
+-	};
+-
+-	u2phy1_host: host-port {
+-		phy-supply = <&vcc5v0_host>;
+-		status = "okay";
+-	};
+-};
+-
+-&uart0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&uart0_xfer &uart0_cts &uart0_rts>;
+-	status = "okay";
+-
+-	bluetooth {
+-		compatible = "brcm,bcm43438-bt";
+-		clocks = <&rk808 1>;
+-		clock-names = "ext_clock";
+-		device-wakeup-gpios = <&gpio2 RK_PD3 GPIO_ACTIVE_HIGH>;
+-		host-wakeup-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
+-		shutdown-gpios = <&gpio0 RK_PB1 GPIO_ACTIVE_HIGH>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&bt_host_wake_l &bt_wake_l &bt_enable_h>;
+-	};
+-};
+-
+-&uart2 {
+-	status = "okay";
+-};
+-
+-&usb_host0_ehci {
+-	status = "okay";
+-};
+-
+-&usb_host0_ohci {
+-	status = "okay";
+-};
+-
+-&usb_host1_ehci {
+-	status = "okay";
+-};
+-
+-&usb_host1_ohci {
+-	status = "okay";
+-};
+-
+-&usbdrd3_0 {
+-	status = "okay";
+-};
+-
+-&usbdrd_dwc3_0 {
+-	status = "okay";
+-	dr_mode = "otg";
+-};
+-
+-&usbdrd3_1 {
+-	status = "okay";
+-};
+-
+-&usbdrd_dwc3_1 {
+-	status = "okay";
+-	dr_mode = "host";
+-};
+-
+-&vopb {
+-	status = "okay";
+-};
+-
+-&vopb_mmu {
+-	status = "okay";
+-};
+-
+-&vopl {
+-	status = "okay";
+-};
+-
+-&vopl_mmu {
+-	status = "okay";
+-};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
+index 6e553ff47534..874af7d3b633 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtsi
+@@ -6,11 +6,13 @@
+ 
+ #include <dt-bindings/input/linux-event-codes.h>
+ #include <dt-bindings/pwm/pwm.h>
++#include <dt-bindings/usb/pd.h>
+ #include "rk3399.dtsi"
+ #include "rk3399-opp.dtsi"
+ 
+ / {
+ 	chosen {
++		bootargs = "earlycon=uart8250,mmio32,0xff1a0000";
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
+@@ -58,7 +60,8 @@
+ 		compatible = "pwm-fan";
+ 		#cooling-cells = <2>;
+ 		fan-supply = <&vcc12v_dcin>;
+-		pwms = <&pwm1 0 50000 0>;
++		pwms = <&pwm1 0 10000 0>;
++		cooling-levels = <0 80 170 230>;
+ 	};
+ 
+ 	sdio_pwrseq: sdio-pwrseq {
+@@ -116,6 +119,8 @@
+ 
+ 	vcc3v3_pcie: vcc3v3-pcie-regulator {
+ 		compatible = "regulator-fixed";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
+ 		enable-active-high;
+ 		gpio = <&gpio1 RK_PD0 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+@@ -154,9 +159,14 @@
+ 		gpio = <&gpio1 RK_PA3 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&vcc5v0_typec_en>;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
+ 		regulator-name = "vcc5v0_typec";
+-		regulator-always-on;
+ 		vin-supply = <&vcc5v0_usb>;
++
++		regulator-state-mem {
++			regulator-off-in-suspend;
++		};
+ 	};
+ 
+ 	vcc5v0_sys: vcc5v0-sys {
+@@ -191,6 +201,11 @@
+ 	};
+ };
+ 
++&cdn_dp {
++	status = "okay";
++	extcon = <&fusb0>;
++};
++
+ &cpu_l0 {
+ 	cpu-supply = <&vdd_cpu_l>;
+ };
+@@ -499,12 +514,77 @@
+ 	fusb0: typec-portc@22 {
+ 		compatible = "fcs,fusb302";
+ 		reg = <0x22>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <RK_PA2 IRQ_TYPE_LEVEL_LOW>;
++		fcs,int_n = <&gpio1 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&fusb0_int>;
+ 		vbus-supply = <&vcc5v0_typec>;
+ 		status = "okay";
++
++		connector {
++			compatible = "usb-c-connector";
++			data-role = "host";
++			label = "USB-C";
++			op-sink-microwatt = <1000000>;
++			power-role = "dual";
++			sink-pdos =
++				<PDO_FIXED(5000, 2500, PDO_FIXED_USB_COMM)>;
++			source-pdos =
++				<PDO_FIXED(5000, 1400, PDO_FIXED_USB_COMM)>;
++			try-power-role = "sink";
++
++			// [  128.617910] typec_displayport port0-partner.0:
++			// No compatible pin configuration found:0000 -> 000c, 001c <- 0000
++			// No compatible pin configuration found:0000 -> 000c, 000c <- 0000
++			// No compatible pin configuration found:0000 -> 000c, 0000 <- 0000
++			// No compatible pin configuration found:0000 -> 000c, 0000 <- 0000
++			// No compatible pin configuration found:000c -> 0000, 0000 <- 000c
++
++			// root@rockpro64:/sys/devices/platform/ff3d0000.i2c/i2c-4/4-0022/typec/port0/port0-partner/port0-partner.0# cat svid 
++			// ff01
++			// root@rockpro64:/sys/devices/platform/ff3d0000.i2c/i2c-4/4-0022/typec/port0/port0-partner/port0-partner.0# cat vdo
++			// 0x00000c05
++			// root@rockpro64:/sys/devices/platform/ff3d0000.i2c/i2c-4/4-0022/typec/port0/port0-partner/port0-partner.0# cat mode
++			// 1
++			// root@rockpro64:/sys/devices/platform/ff3d0000.i2c/i2c-4/4-0022/typec/port0/port0-partner/port0-partner.0# cat active 
++			// yes
++
++			extcon-cables = <1 2 5 6 9 10 12 44>;
++			typec-altmodes = <
++				0xff01 1 0x001c0c00 1
++			>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					usbc_hs: endpoint {
++						remote-endpoint =
++							<&u2phy0_typec_hs>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++
++					usbc_ss: endpoint {
++						remote-endpoint =
++							<&tcphy0_typec_ss>;
++					};
++				};
++
++				port@2 {
++					reg = <2>;
++
++					usbc_dp: endpoint {
++						remote-endpoint =
++							<&tcphy0_typec_dp>;
++					};
++				};
++			};
++		};
+ 	};
+ };
+ 
+@@ -544,10 +624,11 @@
+ &pcie0 {
+ 	ep-gpios = <&gpio2 RK_PD4 GPIO_ACTIVE_HIGH>;
+ 	num-lanes = <4>;
++	max-link-speed = <2>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie_perst>;
+-	vpcie12v-supply = <&vcc12v_dcin>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
++	bus-scan-delay-ms = <1000>;
+ 	status = "okay";
+ };
+ 
+@@ -705,13 +786,51 @@
+ 		compatible = "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <10000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			loader@8000 {
++				label = "loader";
++				reg = <0x0 0x3F8000>;
++			};
++
++			env@3f8000 {
++				label = "env";
++				reg = <0x3F8000 0x8000>;
++			};
++
++			vendor@7c0000 {
++				label = "vendor";
++				reg = <0x7C0000 0x40000>;
++			};
++		};
+ 	};
+ };
+ 
+ &tcphy0 {
++	extcon = <&fusb0>;
+ 	status = "okay";
+ };
+ 
++&tcphy0_dp {
++	port {
++		tcphy0_typec_dp: endpoint {
++			remote-endpoint = <&usbc_dp>;
++		};
++	};
++};
++
++&tcphy0_usb3 {
++	port {
++		tcphy0_typec_ss: endpoint {
++			remote-endpoint = <&usbc_ss>;
++		};
++	};
++};
++
+ &tcphy1 {
+ 	status = "okay";
+ };
+@@ -735,6 +854,12 @@
+ 		phy-supply = <&vcc5v0_host>;
+ 		status = "okay";
+ 	};
++
++	port {
++		u2phy0_typec_hs: endpoint {
++			remote-endpoint = <&usbc_hs>;
++		};
++	};
+ };
+ 
+ &u2phy1 {
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399.dtsi b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+index ada724b12f01..ea0621a8846a 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include <dt-bindings/power/rk3399-power.h>
++#include <dt-bindings/suspend/rockchip-rk3399.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -231,6 +232,7 @@
+ 		reg = <0x0 0xf8000000 0x0 0x2000000>,
+ 		      <0x0 0xfd000000 0x0 0x1000000>;
+ 		reg-names = "axi-base", "apb-base";
++		device_type = "pci";
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
+ 		#interrupt-cells = <1>;
+@@ -249,7 +251,6 @@
+ 				<0 0 0 2 &pcie0_intc 1>,
+ 				<0 0 0 3 &pcie0_intc 2>,
+ 				<0 0 0 4 &pcie0_intc 3>;
+-		linux,pci-domain = <0>;
+ 		max-link-speed = <1>;
+ 		msi-map = <0x0 &its 0x0 0x1000>;
+ 		phys = <&pcie_phy 0>, <&pcie_phy 1>,
+@@ -785,7 +786,7 @@
+ 				};
+ 			};
+ 
+-			cooling-maps {
++			cooling_maps: cooling-maps {
+ 				map0 {
+ 					trip = <&cpu_alert0>;
+ 					cooling-device =
+@@ -2677,4 +2678,27 @@
+ 		};
+ 
+ 	};
++
++	rockchip_suspend: rockchip-suspend {
++		compatible = "rockchip,pm-rk3399";
++		status = "disabled";
++		rockchip,sleep-debug-en = <0>;
++		rockchip,virtual-poweroff = <0>;
++		rockchip,sleep-mode-config = <
++			(0
++			| RKPM_SLP_ARMPD
++			| RKPM_SLP_PERILPPD
++			| RKPM_SLP_DDR_RET
++			| RKPM_SLP_PLLPD
++			| RKPM_SLP_OSC_DIS
++			| RKPM_SLP_CENTER_PD
++			| RKPM_SLP_AP_PWROFF
++			)
++		>;
++		rockchip,wakeup-config = <
++			(0
++			| RKPM_GPIO_WKUP_EN
++			)
++		>;
++	};
+ };
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 6d04b9577b0b..e7a3c36ed4b9 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -967,6 +967,7 @@ CONFIG_PHY_RCAR_GEN3_USB3=m
+ CONFIG_PHY_ROCKCHIP_EMMC=y
+ CONFIG_PHY_ROCKCHIP_INNO_HDMI=m
+ CONFIG_PHY_ROCKCHIP_INNO_USB2=y
++CONFIG_PHY_ROCKCHIP_INNO_HDMI=m
+ CONFIG_PHY_ROCKCHIP_PCIE=m
+ CONFIG_PHY_ROCKCHIP_TYPEC=y
+ CONFIG_PHY_UNIPHIER_USB2=y
+diff --git a/arch/arm64/kernel/head.S b/arch/arm64/kernel/head.S
+index 037421c66b14..412a7ebd8213 100644
+--- a/arch/arm64/kernel/head.S
++++ b/arch/arm64/kernel/head.S
+@@ -43,7 +43,7 @@
+ #elif (PAGE_OFFSET & 0x1fffff) != 0
+ #error PAGE_OFFSET must be at least 2MB aligned
+ #elif TEXT_OFFSET > 0x1fffff
+-#error TEXT_OFFSET must be less than 2MB
++//#error TEXT_OFFSET must be less than 2MB
+ #endif
+ 
+ /*
+diff --git a/drivers/bluetooth/btrtl.c b/drivers/bluetooth/btrtl.c
+index 3a9afc905f24..8c7b35abe492 100644
+--- a/drivers/bluetooth/btrtl.c
++++ b/drivers/bluetooth/btrtl.c
+@@ -17,8 +17,12 @@
+ 
+ #define VERSION "0.1"
+ 
++#define RTL_CHIP_8723CS_CG	3
++#define RTL_CHIP_8723CS_VF	4
++#define RTL_CHIP_8723CS_XX	5
+ #define RTL_EPATCH_SIGNATURE	"Realtech"
+ #define RTL_ROM_LMP_3499	0x3499
++#define RTL_ROM_LMP_8703B	0x8703
+ #define RTL_ROM_LMP_8723A	0x1200
+ #define RTL_ROM_LMP_8723B	0x8723
+ #define RTL_ROM_LMP_8723D	0x8873
+@@ -31,6 +35,7 @@
+ #define IC_MATCH_FL_HCIREV	(1 << 1)
+ #define IC_MATCH_FL_HCIVER	(1 << 2)
+ #define IC_MATCH_FL_HCIBUS	(1 << 3)
++#define IC_MATCH_FL_CHIP_TYPE	(1 << 4)
+ #define IC_INFO(lmps, hcir) \
+ 	.match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_HCIREV, \
+ 	.lmp_subver = (lmps), \
+@@ -42,6 +47,7 @@ struct id_table {
+ 	__u16 hci_rev;
+ 	__u8 hci_ver;
+ 	__u8 hci_bus;
++	__u8 chip_type;
+ 	bool config_needed;
+ 	bool has_rom_version;
+ 	char *fw_name;
+@@ -89,6 +95,39 @@ static const struct id_table ic_id_table[] = {
+ 	  .fw_name  = "rtl_bt/rtl8723b_fw.bin",
+ 	  .cfg_name = "rtl_bt/rtl8723b_config" },
+ 
++	/* 8723CS-CG */
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_CHIP_TYPE |
++			 IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8703B,
++	  .chip_type = RTL_CHIP_8723CS_CG,
++	  .hci_bus = HCI_UART,
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8723cs_cg_fw.bin",
++	  .cfg_name = "rtl_bt/rtl8723cs_cg_config" },
++
++	/* 8723CS-VF */
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_CHIP_TYPE |
++			 IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8703B,
++	  .chip_type = RTL_CHIP_8723CS_VF,
++	  .hci_bus = HCI_UART,
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8723cs_vf_fw.bin",
++	  .cfg_name = "rtl_bt/rtl8723cs_vf_config" },
++
++	/* 8723CS-XX */
++	{ .match_flags = IC_MATCH_FL_LMPSUBV | IC_MATCH_FL_CHIP_TYPE |
++			 IC_MATCH_FL_HCIBUS,
++	  .lmp_subver = RTL_ROM_LMP_8703B,
++	  .chip_type = RTL_CHIP_8723CS_XX,
++	  .hci_bus = HCI_UART,
++	  .config_needed = true,
++	  .has_rom_version = true,
++	  .fw_name  = "rtl_bt/rtl8723cs_xx_fw.bin",
++	  .cfg_name = "rtl_bt/rtl8723cs_xx_config" },
++
+ 	/* 8723D */
+ 	{ IC_INFO(RTL_ROM_LMP_8723B, 0xd),
+ 	  .config_needed = true,
+@@ -171,7 +210,8 @@ static const struct id_table ic_id_table[] = {
+ 	};
+ 
+ static const struct id_table *btrtl_match_ic(u16 lmp_subver, u16 hci_rev,
+-					     u8 hci_ver, u8 hci_bus)
++					     u8 hci_ver, u8 hci_bus,
++					     u8 chip_type)
+ {
+ 	int i;
+ 
+@@ -188,6 +228,9 @@ static const struct id_table *btrtl_match_ic(u16 lmp_subver, u16 hci_rev,
+ 		if ((ic_id_table[i].match_flags & IC_MATCH_FL_HCIBUS) &&
+ 		    (ic_id_table[i].hci_bus != hci_bus))
+ 			continue;
++		if ((ic_id_table[i].match_flags & IC_MATCH_FL_CHIP_TYPE) &&
++		    (ic_id_table[i].chip_type != chip_type))
++			continue;
+ 
+ 		break;
+ 	}
+@@ -270,6 +313,7 @@ static int rtlbt_parse_firmware(struct hci_dev *hdev,
+ 		{ RTL_ROM_LMP_8723B, 1 },
+ 		{ RTL_ROM_LMP_8821A, 2 },
+ 		{ RTL_ROM_LMP_8761A, 3 },
++		{ RTL_ROM_LMP_8703B, 7 },
+ 		{ RTL_ROM_LMP_8822B, 8 },
+ 		{ RTL_ROM_LMP_8723B, 9 },	/* 8723D */
+ 		{ RTL_ROM_LMP_8821A, 10 },	/* 8821C */
+@@ -545,6 +589,48 @@ static int btrtl_setup_rtl8723b(struct hci_dev *hdev,
+ 	return ret;
+ }
+ 
++static bool rtl_has_chip_type(u16 lmp_subver)
++{
++	switch (lmp_subver) {
++	case RTL_ROM_LMP_8703B:
++		return true;
++	default:
++		break;
++	}
++
++	return  false;
++}
++
++static int rtl_read_chip_type(struct hci_dev *hdev, u8 *type)
++{
++	struct rtl_chip_type_evt *chip_type;
++	struct sk_buff *skb;
++	const unsigned char cmd_buf[] = {0x00, 0x94, 0xa0, 0x00, 0xb0};
++
++	/* Read RTL chip type command */
++	skb = __hci_cmd_sync(hdev, 0xfc61, 5, cmd_buf, HCI_INIT_TIMEOUT);
++	if (IS_ERR(skb)) {
++		rtl_dev_err(hdev, "Read chip type failed (%ld)",
++			    PTR_ERR(skb));
++		return PTR_ERR(skb);
++	}
++
++	if (skb->len != sizeof(*chip_type)) {
++		rtl_dev_err(hdev, "RTL chip type event length mismatch");
++		kfree_skb(skb);
++		return -EIO;
++	}
++
++	chip_type = (struct rtl_chip_type_evt *)skb->data;
++	rtl_dev_info(hdev, "chip_type status=%x type=%x",
++		     chip_type->status, chip_type->type);
++
++	*type = chip_type->type & 0x0f;
++
++	kfree_skb(skb);
++	return 0;
++}
++
+ void btrtl_free(struct btrtl_device_info *btrtl_dev)
+ {
+ 	kvfree(btrtl_dev->fw_data);
+@@ -561,7 +647,7 @@ struct btrtl_device_info *btrtl_initialize(struct hci_dev *hdev,
+ 	struct hci_rp_read_local_version *resp;
+ 	char cfg_name[40];
+ 	u16 hci_rev, lmp_subver;
+-	u8 hci_ver;
++	u8 hci_ver, chip_type = 0;
+ 	int ret;
+ 
+ 	btrtl_dev = kzalloc(sizeof(*btrtl_dev), GFP_KERNEL);
+@@ -586,8 +672,14 @@ struct btrtl_device_info *btrtl_initialize(struct hci_dev *hdev,
+ 	lmp_subver = le16_to_cpu(resp->lmp_subver);
+ 	kfree_skb(skb);
+ 
++	if (rtl_has_chip_type(lmp_subver)) {
++		ret = rtl_read_chip_type(hdev, &chip_type);
++		if (ret)
++			goto err_free;
++	}
++
+ 	btrtl_dev->ic_info = btrtl_match_ic(lmp_subver, hci_rev, hci_ver,
+-					    hdev->bus);
++					    hdev->bus, chip_type);
+ 
+ 	if (!btrtl_dev->ic_info) {
+ 		rtl_dev_info(hdev, "unknown IC info, lmp subver %04x, hci rev %04x, hci ver %04x",
+@@ -660,6 +752,7 @@ int btrtl_download_firmware(struct hci_dev *hdev,
+ 	case RTL_ROM_LMP_8821A:
+ 	case RTL_ROM_LMP_8761A:
+ 	case RTL_ROM_LMP_8822B:
++	case RTL_ROM_LMP_8703B:
+ 		return btrtl_setup_rtl8723b(hdev, btrtl_dev);
+ 	default:
+ 		rtl_dev_info(hdev, "assuming no firmware upload needed");
+@@ -678,7 +771,12 @@ int btrtl_setup_realtek(struct hci_dev *hdev)
+ 		return PTR_ERR(btrtl_dev);
+ 
+ 	ret = btrtl_download_firmware(hdev, btrtl_dev);
++	if (ret)
++		goto out_free;
+ 
++	btrtl_apply_quirks(hdev, btrtl_dev);
++
++out_free:
+ 	btrtl_free(btrtl_dev);
+ 
+ 	/* Enable controller to do both LE scan and BR/EDR inquiry
+@@ -818,6 +916,24 @@ int btrtl_get_uart_settings(struct hci_dev *hdev,
+ }
+ EXPORT_SYMBOL_GPL(btrtl_get_uart_settings);
+ 
++void btrtl_apply_quirks(struct hci_dev *hdev,
++			struct btrtl_device_info *btrtl_dev)
++{
++	switch (btrtl_dev->ic_info->lmp_subver) {
++	case RTL_ROM_LMP_8703B:
++		/* 8723CS reports two pages for local ext features,
++		 * but it doesn't support any features from page 2 -
++		 * it either responds with garbage or with error status
++		 */
++		set_bit(HCI_QUIRK_BROKEN_LOCAL_EXT_FTR_MAX_PAGE,
++			&hdev->quirks);
++		break;
++	default:
++		break;
++	}
++}
++EXPORT_SYMBOL_GPL(btrtl_apply_quirks);
++
+ MODULE_AUTHOR("Daniel Drake <drake@endlessm.com>");
+ MODULE_DESCRIPTION("Bluetooth support for Realtek devices ver " VERSION);
+ MODULE_VERSION(VERSION);
+@@ -827,6 +943,12 @@ MODULE_FIRMWARE("rtl_bt/rtl8723b_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723b_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723bs_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723bs_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_cg_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_cg_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_vf_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_vf_config.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_xx_fw.bin");
++MODULE_FIRMWARE("rtl_bt/rtl8723cs_xx_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723ds_fw.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8723ds_config.bin");
+ MODULE_FIRMWARE("rtl_bt/rtl8761a_fw.bin");
+diff --git a/drivers/bluetooth/btrtl.h b/drivers/bluetooth/btrtl.h
+index 2a582682136d..152ed2ece4c2 100644
+--- a/drivers/bluetooth/btrtl.h
++++ b/drivers/bluetooth/btrtl.h
+@@ -14,6 +14,11 @@
+ 
+ struct btrtl_device_info;
+ 
++struct rtl_chip_type_evt {
++	__u8 status;
++	__u8 type;
++} __packed;
++
+ struct rtl_download_cmd {
+ 	__u8 index;
+ 	__u8 data[RTL_FRAG_LEN];
+@@ -60,6 +65,8 @@ int btrtl_get_uart_settings(struct hci_dev *hdev,
+ 			    struct btrtl_device_info *btrtl_dev,
+ 			    unsigned int *controller_baudrate,
+ 			    u32 *device_baudrate, bool *flow_control);
++void btrtl_apply_quirks(struct hci_dev *hdev,
++			struct btrtl_device_info *btrtl_dev);
+ 
+ #else
+ 
+@@ -96,6 +103,11 @@ static inline int btrtl_get_uart_settings(struct hci_dev *hdev,
+ 					  bool *flow_control)
+ {
+ 	return -ENOENT;
++
++static inline void btrtl_apply_quirks(struct hci_dev *hdev,
++			struct btrtl_device_info *btrtl_dev)
++{
++}
+ }
+ 
+ #endif
+diff --git a/drivers/bluetooth/hci_bcm.c b/drivers/bluetooth/hci_bcm.c
+index 8ea5ca8d71d6..6d5871992f79 100644
+--- a/drivers/bluetooth/hci_bcm.c
++++ b/drivers/bluetooth/hci_bcm.c
+@@ -1469,6 +1469,23 @@ static void bcm_serdev_remove(struct serdev_device *serdev)
+ 	hci_uart_unregister_device(&bcmdev->serdev_hu);
+ }
+ 
++static void bcm_serdev_shutdown(struct serdev_device *serdev)
++{
++	struct bcm_device *bcmdev = serdev_device_get_drvdata(serdev);
++
++/*
++	if (test_bit(HCI_UART_REGISTERED, &bcmdev->hu->flags)) {
++		hci_uart_unregister_device(&bcmdev->serdev_hu);
++	}
++*/
++	dev_info(bcmdev->dev, "Cutting power to bluetooth module\n");
++	if (bcm_gpio_set_power(bcmdev, false)) {
++		dev_err(bcmdev->dev, "Failed to power down\n");
++	}
++	usleep_range(500000, 1000000);
++}
++
++
+ #ifdef CONFIG_OF
+ static struct bcm_device_data bcm4354_device_data = {
+ 	.no_early_set_baudrate = true,
+@@ -1494,6 +1511,7 @@ MODULE_DEVICE_TABLE(of, bcm_bluetooth_of_match);
+ static struct serdev_device_driver bcm_serdev_driver = {
+ 	.probe = bcm_serdev_probe,
+ 	.remove = bcm_serdev_remove,
++	.shutdown = bcm_serdev_shutdown,
+ 	.driver = {
+ 		.name = "hci_uart_bcm",
+ 		.of_match_table = of_match_ptr(bcm_bluetooth_of_match),
+diff --git a/drivers/bluetooth/hci_h5.c b/drivers/bluetooth/hci_h5.c
+index e41854e0d79a..bceb4f475e08 100644
+--- a/drivers/bluetooth/hci_h5.c
++++ b/drivers/bluetooth/hci_h5.c
+@@ -904,6 +904,10 @@ static int h5_btrtl_setup(struct h5 *h5)
+ 	err = btrtl_download_firmware(h5->hu->hdev, btrtl_dev);
+ 	/* Give the device some time before the hci-core sends it a reset */
+ 	usleep_range(10000, 20000);
++	if (err)
++		goto out_free;
++
++	btrtl_apply_quirks(h5->hu->hdev, btrtl_dev);
+ 
+ out_free:
+ 	btrtl_free(btrtl_dev);
+@@ -1020,6 +1024,8 @@ static const struct of_device_id rtl_bluetooth_of_match[] = {
+ 	  .data = (const void *)&rtl_vnd },
+ 	{ .compatible = "realtek,rtl8723bs-bt",
+ 	  .data = (const void *)&rtl_vnd },
++	{ .compatible = "realtek,rtl8723cs-bt",
++	  .data = (const void *)&rtl_vnd },
+ #endif
+ 	{ },
+ };
+diff --git a/drivers/bluetooth/hci_serdev.c b/drivers/bluetooth/hci_serdev.c
+index 7b233312e723..f2fcefeb99e0 100644
+--- a/drivers/bluetooth/hci_serdev.c
++++ b/drivers/bluetooth/hci_serdev.c
+@@ -363,5 +363,7 @@ void hci_uart_unregister_device(struct hci_uart *hu)
+ 
+ 	hu->proto->close(hu);
+ 	serdev_device_close(hu->serdev);
++
++	clear_bit(HCI_UART_REGISTERED, &hu->flags);
+ }
+ EXPORT_SYMBOL_GPL(hci_uart_unregister_device);
+diff --git a/drivers/clk/rockchip/clk-rk3399.c b/drivers/clk/rockchip/clk-rk3399.c
+index ce1d2446f142..ba49210bf4ee 100644
+--- a/drivers/clk/rockchip/clk-rk3399.c
++++ b/drivers/clk/rockchip/clk-rk3399.c
+@@ -99,6 +99,7 @@ static struct rockchip_pll_rate_table rk3399_pll_rates[] = {
+ 	RK3036_PLL_RATE(  74250000, 2, 99, 4, 4, 1, 0),
+ 	RK3036_PLL_RATE(  65000000, 1, 65, 6, 4, 1, 0),
+ 	RK3036_PLL_RATE(  54000000, 1, 54, 6, 4, 1, 0),
++	RK3036_PLL_RATE(  32000000, 3, 112, 7, 4, 0, 0),
+ 	RK3036_PLL_RATE(  27000000, 1, 27, 6, 4, 1, 0),
+ 	{ /* sentinel */ },
+ };
+diff --git a/drivers/firmware/Kconfig b/drivers/firmware/Kconfig
+index fbd785dd0513..da0c3183e48a 100644
+--- a/drivers/firmware/Kconfig
++++ b/drivers/firmware/Kconfig
+@@ -251,6 +251,13 @@ config QCOM_SCM_DOWNLOAD_MODE_DEFAULT
+ 
+ 	  Say Y here to enable "download mode" by default.
+ 
++config ROCKCHIP_SIP
++	bool "Rockchip SIP interface"
++	depends on ARM64 && ARM_PSCI_FW
++	help
++	  Say Y here if you want to enable SIP callbacks for Rockchip platforms
++	  This option enables support for communicating with the ATF.
++
+ config TI_SCI_PROTOCOL
+ 	tristate "TI System Control Interface (TISCI) Message Protocol"
+ 	depends on TI_MESSAGE_MANAGER
+diff --git a/drivers/firmware/Makefile b/drivers/firmware/Makefile
+index 99510be9f5ed..5533d2ffae54 100644
+--- a/drivers/firmware/Makefile
++++ b/drivers/firmware/Makefile
+@@ -28,6 +28,7 @@ obj-y				+= meson/
+ obj-$(CONFIG_GOOGLE_FIRMWARE)	+= google/
+ obj-$(CONFIG_EFI)		+= efi/
+ obj-$(CONFIG_UEFI_CPER)		+= efi/
++obj-$(CONFIG_ROCKCHIP_SIP)	+= rockchip_sip.o
+ obj-y				+= imx/
+ obj-y				+= psci/
+ obj-y				+= smccc/
+diff --git a/drivers/gpu/drm/bridge/analogix/analogix_dp_core.c b/drivers/gpu/drm/bridge/analogix/analogix_dp_core.c
+index 76736fb8ed94..9735ab71fca7 100644
+--- a/drivers/gpu/drm/bridge/analogix/analogix_dp_core.c
++++ b/drivers/gpu/drm/bridge/analogix/analogix_dp_core.c
+@@ -35,6 +35,10 @@
+ 
+ static const bool verify_fast_training;
+ 
++static bool enable_psr = true;
++module_param(enable_psr, bool, 0644);
++MODULE_PARM_DESC(enable_psr, "PSR support (1 = enabled (default), 0 = disabled)");
++
+ struct bridge_init {
+ 	struct i2c_client *client;
+ 	struct device_node *node;
+@@ -979,7 +983,7 @@ static int analogix_dp_commit(struct analogix_dp_device *dp)
+ 	if (ret)
+ 		return ret;
+ 
+-	if (analogix_dp_detect_sink_psr(dp)) {
++	if (enable_psr && analogix_dp_detect_sink_psr(dp)) {
+ 		ret = analogix_dp_enable_sink_psr(dp);
+ 		if (ret)
+ 			return ret;
+diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
+index 3ed8635a6fbd..b14c06142679 100644
+--- a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
++++ b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
+@@ -10,6 +10,7 @@
+ #include <linux/fb.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of_device.h>
+ 
+ #include <linux/gpio/consumer.h>
+ #include <linux/regulator/consumer.h>
+@@ -20,14 +21,6 @@
+ 
+ #include <video/mipi_display.h>
+ 
+-struct ili9881c {
+-	struct drm_panel	panel;
+-	struct mipi_dsi_device	*dsi;
+-
+-	struct regulator	*power;
+-	struct gpio_desc	*reset;
+-};
+-
+ enum ili9881c_op {
+ 	ILI9881C_SWITCH_PAGE,
+ 	ILI9881C_COMMAND,
+@@ -45,6 +38,22 @@ struct ili9881c_instr {
+ 	} arg;
+ };
+ 
++struct ili9881c_desc {
++	const struct ili9881c_instr *init;
++	const size_t init_length;
++	const struct drm_display_mode *mode;
++};
++
++struct ili9881c {
++	struct drm_panel	panel;
++	struct mipi_dsi_device	*dsi;
++	const struct ili9881c_desc	*desc;
++
++	struct regulator	*power;
++	struct gpio_desc	*reset;
++};
++
++
+ #define ILI9881C_SWITCH_PAGE_INSTR(_page)	\
+ 	{					\
+ 		.op = ILI9881C_SWITCH_PAGE,	\
+@@ -64,7 +73,7 @@ struct ili9881c_instr {
+ 		},					\
+ 	}
+ 
+-static const struct ili9881c_instr ili9881c_init[] = {
++static const struct ili9881c_instr lhr050h41_init[] = {
+ 	ILI9881C_SWITCH_PAGE_INSTR(3),
+ 	ILI9881C_COMMAND_INSTR(0x01, 0x00),
+ 	ILI9881C_COMMAND_INSTR(0x02, 0x00),
+@@ -252,6 +261,199 @@ static const struct ili9881c_instr ili9881c_init[] = {
+ 	ILI9881C_COMMAND_INSTR(0xD3, 0x3F),
+ };
+ 
++static const struct ili9881c_instr k101_im2byl02_init[] = {
++	ILI9881C_SWITCH_PAGE_INSTR(3),
++	ILI9881C_COMMAND_INSTR(0x01, 0x00),
++	ILI9881C_COMMAND_INSTR(0x02, 0x00),
++	ILI9881C_COMMAND_INSTR(0x03, 0x73),
++	ILI9881C_COMMAND_INSTR(0x04, 0x00),
++	ILI9881C_COMMAND_INSTR(0x05, 0x00),
++	ILI9881C_COMMAND_INSTR(0x06, 0x08),
++	ILI9881C_COMMAND_INSTR(0x07, 0x00),
++	ILI9881C_COMMAND_INSTR(0x08, 0x00),
++	ILI9881C_COMMAND_INSTR(0x09, 0x00),
++	ILI9881C_COMMAND_INSTR(0x0A, 0x01),
++	ILI9881C_COMMAND_INSTR(0x0B, 0x01),
++	ILI9881C_COMMAND_INSTR(0x0C, 0x00),
++	ILI9881C_COMMAND_INSTR(0x0D, 0x01),
++	ILI9881C_COMMAND_INSTR(0x0E, 0x01),
++	ILI9881C_COMMAND_INSTR(0x0F, 0x00),
++	ILI9881C_COMMAND_INSTR(0x10, 0x00),
++	ILI9881C_COMMAND_INSTR(0x11, 0x00),
++	ILI9881C_COMMAND_INSTR(0x12, 0x00),
++	ILI9881C_COMMAND_INSTR(0x13, 0x00),
++	ILI9881C_COMMAND_INSTR(0x14, 0x00),
++	ILI9881C_COMMAND_INSTR(0x15, 0x00),
++	ILI9881C_COMMAND_INSTR(0x16, 0x00),
++	ILI9881C_COMMAND_INSTR(0x17, 0x00),
++	ILI9881C_COMMAND_INSTR(0x18, 0x00),
++	ILI9881C_COMMAND_INSTR(0x19, 0x00),
++	ILI9881C_COMMAND_INSTR(0x1A, 0x00),
++	ILI9881C_COMMAND_INSTR(0x1B, 0x00),
++	ILI9881C_COMMAND_INSTR(0x1C, 0x00),
++	ILI9881C_COMMAND_INSTR(0x1D, 0x00),
++	ILI9881C_COMMAND_INSTR(0x1E, 0x40),
++	ILI9881C_COMMAND_INSTR(0x1F, 0xC0),
++	ILI9881C_COMMAND_INSTR(0x20, 0x06),
++	ILI9881C_COMMAND_INSTR(0x21, 0x01),
++	ILI9881C_COMMAND_INSTR(0x22, 0x06),
++	ILI9881C_COMMAND_INSTR(0x23, 0x01),
++	ILI9881C_COMMAND_INSTR(0x24, 0x88),
++	ILI9881C_COMMAND_INSTR(0x25, 0x88),
++	ILI9881C_COMMAND_INSTR(0x26, 0x00),
++	ILI9881C_COMMAND_INSTR(0x27, 0x00),
++	ILI9881C_COMMAND_INSTR(0x28, 0x3B),
++	ILI9881C_COMMAND_INSTR(0x29, 0x03),
++	ILI9881C_COMMAND_INSTR(0x2A, 0x00),
++	ILI9881C_COMMAND_INSTR(0x2B, 0x00),
++	ILI9881C_COMMAND_INSTR(0x2C, 0x00),
++	ILI9881C_COMMAND_INSTR(0x2D, 0x00),
++	ILI9881C_COMMAND_INSTR(0x2E, 0x00),
++	ILI9881C_COMMAND_INSTR(0x2F, 0x00),
++	ILI9881C_COMMAND_INSTR(0x30, 0x00),
++	ILI9881C_COMMAND_INSTR(0x31, 0x00),
++	ILI9881C_COMMAND_INSTR(0x32, 0x00),
++	ILI9881C_COMMAND_INSTR(0x33, 0x00),
++	ILI9881C_COMMAND_INSTR(0x34, 0x00), /* GPWR1/2 non overlap time 2.62us */
++	ILI9881C_COMMAND_INSTR(0x35, 0x00),
++	ILI9881C_COMMAND_INSTR(0x36, 0x00),
++	ILI9881C_COMMAND_INSTR(0x37, 0x00),
++	ILI9881C_COMMAND_INSTR(0x38, 0x00),
++	ILI9881C_COMMAND_INSTR(0x39, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3A, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3B, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3C, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3D, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3E, 0x00),
++	ILI9881C_COMMAND_INSTR(0x3F, 0x00),
++	ILI9881C_COMMAND_INSTR(0x40, 0x00),
++	ILI9881C_COMMAND_INSTR(0x41, 0x00),
++	ILI9881C_COMMAND_INSTR(0x42, 0x00),
++	ILI9881C_COMMAND_INSTR(0x43, 0x00),
++	ILI9881C_COMMAND_INSTR(0x44, 0x00),
++	ILI9881C_COMMAND_INSTR(0x50, 0x01),
++	ILI9881C_COMMAND_INSTR(0x51, 0x23),
++	ILI9881C_COMMAND_INSTR(0x52, 0x45),
++	ILI9881C_COMMAND_INSTR(0x53, 0x67),
++	ILI9881C_COMMAND_INSTR(0x54, 0x89),
++	ILI9881C_COMMAND_INSTR(0x55, 0xAB),
++	ILI9881C_COMMAND_INSTR(0x56, 0x01),
++	ILI9881C_COMMAND_INSTR(0x57, 0x23),
++	ILI9881C_COMMAND_INSTR(0x58, 0x45),
++	ILI9881C_COMMAND_INSTR(0x59, 0x67),
++	ILI9881C_COMMAND_INSTR(0x5A, 0x89),
++	ILI9881C_COMMAND_INSTR(0x5B, 0xAB),
++	ILI9881C_COMMAND_INSTR(0x5C, 0xCD),
++	ILI9881C_COMMAND_INSTR(0x5D, 0xEF),
++	ILI9881C_COMMAND_INSTR(0x5E, 0x00),
++	ILI9881C_COMMAND_INSTR(0x5F, 0x01),
++	ILI9881C_COMMAND_INSTR(0x60, 0x01),
++	ILI9881C_COMMAND_INSTR(0x61, 0x06),
++	ILI9881C_COMMAND_INSTR(0x62, 0x06),
++	ILI9881C_COMMAND_INSTR(0x63, 0x07),
++	ILI9881C_COMMAND_INSTR(0x64, 0x07),
++	ILI9881C_COMMAND_INSTR(0x65, 0x00),
++	ILI9881C_COMMAND_INSTR(0x66, 0x00),
++	ILI9881C_COMMAND_INSTR(0x67, 0x02),
++	ILI9881C_COMMAND_INSTR(0x68, 0x02),
++	ILI9881C_COMMAND_INSTR(0x69, 0x05),
++	ILI9881C_COMMAND_INSTR(0x6A, 0x05),
++	ILI9881C_COMMAND_INSTR(0x6B, 0x02),
++	ILI9881C_COMMAND_INSTR(0x6C, 0x0D),
++	ILI9881C_COMMAND_INSTR(0x6D, 0x0D),
++	ILI9881C_COMMAND_INSTR(0x6E, 0x0C),
++	ILI9881C_COMMAND_INSTR(0x6F, 0x0C),
++	ILI9881C_COMMAND_INSTR(0x70, 0x0F),
++	ILI9881C_COMMAND_INSTR(0x71, 0x0F),
++	ILI9881C_COMMAND_INSTR(0x72, 0x0E),
++	ILI9881C_COMMAND_INSTR(0x73, 0x0E),
++	ILI9881C_COMMAND_INSTR(0x74, 0x02),
++	ILI9881C_COMMAND_INSTR(0x75, 0x01),
++	ILI9881C_COMMAND_INSTR(0x76, 0x01),
++	ILI9881C_COMMAND_INSTR(0x77, 0x06),
++	ILI9881C_COMMAND_INSTR(0x78, 0x06),
++	ILI9881C_COMMAND_INSTR(0x79, 0x07),
++	ILI9881C_COMMAND_INSTR(0x7A, 0x07),
++	ILI9881C_COMMAND_INSTR(0x7B, 0x00),
++	ILI9881C_COMMAND_INSTR(0x7C, 0x00),
++	ILI9881C_COMMAND_INSTR(0x7D, 0x02),
++	ILI9881C_COMMAND_INSTR(0x7E, 0x02),
++	ILI9881C_COMMAND_INSTR(0x7F, 0x05),
++	ILI9881C_COMMAND_INSTR(0x80, 0x05),
++	ILI9881C_COMMAND_INSTR(0x81, 0x02),
++	ILI9881C_COMMAND_INSTR(0x82, 0x0D),
++	ILI9881C_COMMAND_INSTR(0x83, 0x0D),
++	ILI9881C_COMMAND_INSTR(0x84, 0x0C),
++	ILI9881C_COMMAND_INSTR(0x85, 0x0C),
++	ILI9881C_COMMAND_INSTR(0x86, 0x0F),
++	ILI9881C_COMMAND_INSTR(0x87, 0x0F),
++	ILI9881C_COMMAND_INSTR(0x88, 0x0E),
++	ILI9881C_COMMAND_INSTR(0x89, 0x0E),
++	ILI9881C_COMMAND_INSTR(0x8A, 0x02),
++	ILI9881C_SWITCH_PAGE_INSTR(4),
++	ILI9881C_COMMAND_INSTR(0x3B, 0xC0), /* ILI4003D sel */
++	ILI9881C_COMMAND_INSTR(0x6C, 0x15), /* Set VCORE voltage = 1.5V */
++	ILI9881C_COMMAND_INSTR(0x6E, 0x2A), /* di_pwr_reg=0 for power mode 2A, VGH clamp 18V */
++	ILI9881C_COMMAND_INSTR(0x6F, 0x33), /* pumping ratio VGH=5x VGL=-3x */
++	ILI9881C_COMMAND_INSTR(0x8D, 0x1B), /* VGL clamp -10V */
++	ILI9881C_COMMAND_INSTR(0x87, 0xBA), /* ESD */
++	ILI9881C_COMMAND_INSTR(0x3A, 0x24), /* POWER SAVING */
++	ILI9881C_COMMAND_INSTR(0x26, 0x76),
++	ILI9881C_COMMAND_INSTR(0xB2, 0xD1),
++	ILI9881C_SWITCH_PAGE_INSTR(1),
++	ILI9881C_COMMAND_INSTR(0x22, 0x0A), /* BGR, SS */
++	ILI9881C_COMMAND_INSTR(0x31, 0x00), /* Zigzag type3 inversion */
++	ILI9881C_COMMAND_INSTR(0x40, 0x53), /* ILI4003D sel */
++	ILI9881C_COMMAND_INSTR(0x43, 0x66),
++	ILI9881C_COMMAND_INSTR(0x53, 0x4C),
++	ILI9881C_COMMAND_INSTR(0x50, 0x87),
++	ILI9881C_COMMAND_INSTR(0x51, 0x82),
++	ILI9881C_COMMAND_INSTR(0x60, 0x15),
++	ILI9881C_COMMAND_INSTR(0x61, 0x01),
++	ILI9881C_COMMAND_INSTR(0x62, 0x0C),
++	ILI9881C_COMMAND_INSTR(0x63, 0x00),
++	ILI9881C_COMMAND_INSTR(0xA0, 0x00),
++	ILI9881C_COMMAND_INSTR(0xA1, 0x13), /* VP251 */
++	ILI9881C_COMMAND_INSTR(0xA2, 0x23), /* VP247 */
++	ILI9881C_COMMAND_INSTR(0xA3, 0x14), /* VP243 */
++	ILI9881C_COMMAND_INSTR(0xA4, 0x16), /* VP239 */
++	ILI9881C_COMMAND_INSTR(0xA5, 0x29), /* VP231 */
++	ILI9881C_COMMAND_INSTR(0xA6, 0x1E), /* VP219 */
++	ILI9881C_COMMAND_INSTR(0xA7, 0x1D), /* VP203 */
++	ILI9881C_COMMAND_INSTR(0xA8, 0x86), /* VP175 */
++	ILI9881C_COMMAND_INSTR(0xA9, 0x1E), /* VP144 */
++	ILI9881C_COMMAND_INSTR(0xAA, 0x29), /* VP111 */
++	ILI9881C_COMMAND_INSTR(0xAB, 0x74), /* VP80 */
++	ILI9881C_COMMAND_INSTR(0xAC, 0x19), /* VP52 */
++	ILI9881C_COMMAND_INSTR(0xAD, 0x17), /* VP36 */
++	ILI9881C_COMMAND_INSTR(0xAE, 0x4B), /* VP24 */
++	ILI9881C_COMMAND_INSTR(0xAF, 0x20), /* VP16 */
++	ILI9881C_COMMAND_INSTR(0xB0, 0x26), /* VP12 */
++	ILI9881C_COMMAND_INSTR(0xB1, 0x4C), /* VP8 */
++	ILI9881C_COMMAND_INSTR(0xB2, 0x5D), /* VP4 */
++	ILI9881C_COMMAND_INSTR(0xB3, 0x3F), /* VP0 */
++	ILI9881C_COMMAND_INSTR(0xC0, 0x00), /* VN255 GAMMA N */
++	ILI9881C_COMMAND_INSTR(0xC1, 0x13), /* VN251 */
++	ILI9881C_COMMAND_INSTR(0xC2, 0x23), /* VN247 */
++	ILI9881C_COMMAND_INSTR(0xC3, 0x14), /* VN243 */
++	ILI9881C_COMMAND_INSTR(0xC4, 0x16), /* VN239 */
++	ILI9881C_COMMAND_INSTR(0xC5, 0x29), /* VN231 */
++	ILI9881C_COMMAND_INSTR(0xC6, 0x1E), /* VN219 */
++	ILI9881C_COMMAND_INSTR(0xC7, 0x1D), /* VN203 */
++	ILI9881C_COMMAND_INSTR(0xC8, 0x86), /* VN175 */
++	ILI9881C_COMMAND_INSTR(0xC9, 0x1E), /* VN144 */
++	ILI9881C_COMMAND_INSTR(0xCA, 0x29), /* VN111 */
++	ILI9881C_COMMAND_INSTR(0xCB, 0x74), /* VN80 */
++	ILI9881C_COMMAND_INSTR(0xCC, 0x19), /* VN52 */
++	ILI9881C_COMMAND_INSTR(0xCD, 0x17), /* VN36 */
++	ILI9881C_COMMAND_INSTR(0xCE, 0x4B), /* VN24 */
++	ILI9881C_COMMAND_INSTR(0xCF, 0x20), /* VN16 */
++	ILI9881C_COMMAND_INSTR(0xD0, 0x26), /* VN12 */
++	ILI9881C_COMMAND_INSTR(0xD1, 0x4C), /* VN8 */
++	ILI9881C_COMMAND_INSTR(0xD2, 0x5D), /* VN4 */
++	ILI9881C_COMMAND_INSTR(0xD3, 0x3F), /* VN0 */
++};
++
+ static inline struct ili9881c *panel_to_ili9881c(struct drm_panel *panel)
+ {
+ 	return container_of(panel, struct ili9881c, panel);
+@@ -311,8 +513,8 @@ static int ili9881c_prepare(struct drm_panel *panel)
+ 	gpiod_set_value(ctx->reset, 0);
+ 	msleep(20);
+ 
+-	for (i = 0; i < ARRAY_SIZE(ili9881c_init); i++) {
+-		const struct ili9881c_instr *instr = &ili9881c_init[i];
++	for (i = 0; i < ctx->desc->init_length; i++) {
++		const struct ili9881c_instr *instr = &ctx->desc->init[i];
+ 
+ 		if (instr->op == ILI9881C_SWITCH_PAGE)
+ 			ret = ili9881c_switch_page(ctx, instr->arg.page);
+@@ -368,7 +570,7 @@ static int ili9881c_unprepare(struct drm_panel *panel)
+ 	return 0;
+ }
+ 
+-static const struct drm_display_mode bananapi_default_mode = {
++static const struct drm_display_mode lhr050h41_default_mode = {
+ 	.clock		= 62000,
+ 
+ 	.hdisplay	= 720,
+@@ -380,6 +582,26 @@ static const struct drm_display_mode bananapi_default_mode = {
+ 	.vsync_start	= 1280 + 10,
+ 	.vsync_end	= 1280 + 10 + 10,
+ 	.vtotal		= 1280 + 10 + 10 + 20,
++
++	.width_mm	= 62,
++	.height_mm	= 110,
++};
++
++static const struct drm_display_mode k101_im2byl02_default_mode = {
++	.clock		= 69700,
++
++	.hdisplay	= 800,
++	.hsync_start	= 800 + 52,
++	.hsync_end	= 800 + 52 + 8,
++	.htotal		= 800 + 52 + 8 + 48,
++
++	.vdisplay	= 1280,
++	.vsync_start	= 1280 + 16,
++	.vsync_end	= 1280 + 16 + 6,
++	.vtotal		= 1280 + 16 + 6 + 15,
++
++	.width_mm	= 135,
++	.height_mm	= 217,
+ };
+ 
+ static int ili9881c_get_modes(struct drm_panel *panel,
+@@ -388,12 +610,12 @@ static int ili9881c_get_modes(struct drm_panel *panel,
+ 	struct ili9881c *ctx = panel_to_ili9881c(panel);
+ 	struct drm_display_mode *mode;
+ 
+-	mode = drm_mode_duplicate(connector->dev, &bananapi_default_mode);
++	mode = drm_mode_duplicate(connector->dev, ctx->desc->mode);
+ 	if (!mode) {
+ 		dev_err(&ctx->dsi->dev, "failed to add mode %ux%ux@%u\n",
+-			bananapi_default_mode.hdisplay,
+-			bananapi_default_mode.vdisplay,
+-			drm_mode_vrefresh(&bananapi_default_mode));
+++			ctx->desc->mode->hdisplay,
+++			ctx->desc->mode->vdisplay,
+++			drm_mode_vrefresh(ctx->desc->mode));
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -402,8 +624,8 @@ static int ili9881c_get_modes(struct drm_panel *panel,
+ 	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
+ 	drm_mode_probed_add(connector, mode);
+ 
+-	connector->display_info.width_mm = 62;
+-	connector->display_info.height_mm = 110;
++	connector->display_info.width_mm = mode->width_mm;
++	connector->display_info.height_mm = mode->height_mm;
+ 
+ 	return 1;
+ }
+@@ -426,6 +648,7 @@ static int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
+ 		return -ENOMEM;
+ 	mipi_dsi_set_drvdata(dsi, ctx);
+ 	ctx->dsi = dsi;
++    ctx->desc = of_device_get_match_data(&dsi->dev);
+ 
+ 	drm_panel_init(&ctx->panel, &dsi->dev, &ili9881c_funcs,
+ 		       DRM_MODE_CONNECTOR_DSI);
+@@ -467,8 +690,21 @@ static int ili9881c_dsi_remove(struct mipi_dsi_device *dsi)
+ 	return 0;
+ }
+ 
++static const struct ili9881c_desc lhr050h41_desc = {
++	.init = lhr050h41_init,
++	.init_length = ARRAY_SIZE(lhr050h41_init),
++	.mode = &lhr050h41_default_mode,
++};
++
++static const struct ili9881c_desc k101_im2byl02_desc = {
++	.init = k101_im2byl02_init,
++	.init_length = ARRAY_SIZE(k101_im2byl02_init),
++	.mode = &k101_im2byl02_default_mode,
++};
++
+ static const struct of_device_id ili9881c_of_match[] = {
+-	{ .compatible = "bananapi,lhr050h41" },
++	{ .compatible = "bananapi,lhr050h41", .data = &lhr050h41_desc },
++    { .compatible = "feixin,k101-im2byl02", .data = &k101_im2byl02_desc },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, ili9881c_of_match);
+diff --git a/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c b/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
+index 23de359a1dec..9ad35ed3018e 100644
+--- a/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
++++ b/drivers/gpu/drm/rockchip/dw_hdmi-rockchip.c
+@@ -84,6 +84,12 @@ static const struct dw_hdmi_mpll_config rockchip_mpll_cfg[] = {
+ 			{ 0x2153, 0x0000},
+ 			{ 0x40f3, 0x0000}
+ 		},
++	}, {
++		32000000, {
++			{ 0x0072, 0x0001},
++			{ 0x2153, 0x0000},
++			{ 0x40f3, 0x0000}
++		},
+ 	}, {
+ 		36000000, {
+ 			{ 0x00b3, 0x0000},
+diff --git a/drivers/gpu/drm/sun4i/sun8i_mixer.c b/drivers/gpu/drm/sun4i/sun8i_mixer.c
+index c3304028e3dc..e736c6ffe07c 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_mixer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_mixer.c
+@@ -284,8 +284,13 @@ static struct drm_plane **sun8i_layers_init(struct drm_device *drm,
+ 
+ 	for (i = 0; i < mixer->cfg->ui_num; i++) {
+ 		struct sun8i_ui_layer *layer;
++		enum drm_plane_type type = DRM_PLANE_TYPE_OVERLAY;
++		if (i == 0)
++			type = DRM_PLANE_TYPE_PRIMARY;
++		else if (i == (mixer->cfg->ui_num - 1))
++			type = DRM_PLANE_TYPE_CURSOR;
+ 
+-		layer = sun8i_ui_layer_init_one(drm, mixer, i);
++		layer = sun8i_ui_layer_init_one(drm, mixer, i, type);
+ 		if (IS_ERR(layer)) {
+ 			dev_err(drm->dev, "Couldn't initialize %s plane\n",
+ 				i ? "overlay" : "primary");
+diff --git a/drivers/gpu/drm/sun4i/sun8i_ui_layer.c b/drivers/gpu/drm/sun4i/sun8i_ui_layer.c
+index 54f937a7d5e7..2459855d09b4 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_ui_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_ui_layer.c
+@@ -24,10 +24,11 @@
+ #include "sun8i_ui_scaler.h"
+ 
+ static void sun8i_ui_layer_enable(struct sun8i_mixer *mixer, int channel,
+-				  int overlay, bool enable, unsigned int zpos,
+-				  unsigned int old_zpos)
++				  int overlay, bool was_enabled, bool enable,
++				  unsigned int zpos, unsigned int old_zpos)
+ {
+ 	u32 val, bld_base, ch_base;
++	unsigned int old_pipe_ch;
+ 
+ 	bld_base = sun8i_blender_base(mixer);
+ 	ch_base = sun8i_channel_base(mixer, channel);
+@@ -35,28 +36,56 @@ static void sun8i_ui_layer_enable(struct sun8i_mixer *mixer, int channel,
+ 	DRM_DEBUG_DRIVER("%sabling channel %d overlay %d\n",
+ 			 enable ? "En" : "Dis", channel, overlay);
+ 
+-	if (enable)
+-		val = SUN8I_MIXER_CHAN_UI_LAYER_ATTR_EN;
+-	else
+-		val = 0;
+-
++	/* We always update the layer enable bit, because it can clear
++	 * spontaneously for unknown reasons. */
++	val = enable ? SUN8I_MIXER_CHAN_UI_LAYER_ATTR_EN : 0;
+ 	regmap_update_bits(mixer->engine.regs,
+ 			   SUN8I_MIXER_CHAN_UI_LAYER_ATTR(ch_base, overlay),
+ 			   SUN8I_MIXER_CHAN_UI_LAYER_ATTR_EN, val);
+ 
+-	if (!enable || zpos != old_zpos) {
+-		regmap_update_bits(mixer->engine.regs,
+-				   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
+-				   SUN8I_MIXER_BLEND_PIPE_CTL_EN(old_zpos),
+-				   0);
+-
+-		regmap_update_bits(mixer->engine.regs,
++	/*
++	 * If this layer was enabled and is being disabled or if it is
++	 * enabled and just changing zpos, clear the old route, if it is
++	 * still configured to this layer in HW.
++	 */
++	if ((was_enabled && !enable) || (enable && zpos != old_zpos)) {
++		/* get channel the pipe for old_zpos is routed to from the HW */
++		regmap_read(mixer->engine.regs,
+ 				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+-				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos),
+-				   0);
++				   &old_pipe_ch);
++		old_pipe_ch &= SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos);
++		old_pipe_ch >>= SUN8I_MIXER_BLEND_ROUTE_PIPE_SHIFT(old_zpos);
++
++		/*
++		 * Check that pipe for old_zpos is still routed to our layer,
++		 * and clear/disable it if it is.
++		 */
++
++		if (old_pipe_ch == channel) {
++			DRM_DEBUG_DRIVER("chan=%d en=%d->%d zpos=%d->%d\n",
++			       channel, was_enabled, enable, old_zpos, zpos);
++
++			DRM_DEBUG_DRIVER("  disable pipe %d\n", old_zpos);
++
++			regmap_update_bits(mixer->engine.regs,
++					   SUN8I_MIXER_BLEND_ROUTE(bld_base),
++					   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos),
++					   0);
++
++			regmap_update_bits(mixer->engine.regs,
++					   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
++					   SUN8I_MIXER_BLEND_PIPE_CTL_EN(old_zpos),
++					   0);
++		}
+ 	}
+ 
+-	if (enable) {
++	/*
++	 * If enabling this layer or changin zpos, set route to this layer.
++	 */
++	if ((enable && !was_enabled) || (enable && zpos != old_zpos)) {
++		DRM_DEBUG_DRIVER("chan=%d en=%d->%d zpos=%d->%d\n",
++		       channel, was_enabled, enable, old_zpos, zpos);
++
+ 		val = SUN8I_MIXER_BLEND_PIPE_CTL_EN(zpos);
+ 
+ 		regmap_update_bits(mixer->engine.regs,
+@@ -69,6 +98,8 @@ static void sun8i_ui_layer_enable(struct sun8i_mixer *mixer, int channel,
+ 				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+ 				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(zpos),
+ 				   val);
++
++		DRM_DEBUG_DRIVER("  enable pipe %d <- ch %d\n", zpos, channel);
+ 	}
+ }
+ 
+@@ -263,45 +294,43 @@ static int sun8i_ui_layer_atomic_check(struct drm_plane *plane,
+ 						   true, true);
+ }
+ 
+-static void sun8i_ui_layer_atomic_disable(struct drm_plane *plane,
+-					  struct drm_plane_state *old_state)
++static void sun8i_ui_layer_atomic_update(struct drm_plane *plane,
++					 struct drm_plane_state *old_state)
+ {
+ 	struct sun8i_ui_layer *layer = plane_to_sun8i_ui_layer(plane);
++	unsigned int zpos = plane->state->normalized_zpos;
+ 	unsigned int old_zpos = old_state->normalized_zpos;
+ 	struct sun8i_mixer *mixer = layer->mixer;
++	bool was_enabled = old_state->crtc && old_state->visible;
++	bool enable = plane->state->crtc && plane->state->visible;
+ 
+-	sun8i_ui_layer_enable(mixer, layer->channel, layer->overlay, false, 0,
+-			      old_zpos);
++	if (enable) {
++		sun8i_ui_layer_update_coord(mixer, layer->channel,
++					    layer->overlay, plane, zpos);
++		sun8i_ui_layer_update_formats(mixer, layer->channel,
++					      layer->overlay, plane);
++		sun8i_ui_layer_update_buffer(mixer, layer->channel,
++					     layer->overlay, plane);
++	}
++
++	sun8i_ui_layer_enable(mixer, layer->channel, layer->overlay,
++			      was_enabled, enable, zpos, old_zpos);
+ }
+ 
+-static void sun8i_ui_layer_atomic_update(struct drm_plane *plane,
+-					 struct drm_plane_state *old_state)
++void sun8i_ui_layer_plane_reset(struct drm_plane *plane)
+ {
+ 	struct sun8i_ui_layer *layer = plane_to_sun8i_ui_layer(plane);
+-	unsigned int zpos = plane->state->normalized_zpos;
+-	unsigned int old_zpos = old_state->normalized_zpos;
+-	struct sun8i_mixer *mixer = layer->mixer;
+ 
+-	if (!plane->state->visible) {
+-		sun8i_ui_layer_enable(mixer, layer->channel,
+-				      layer->overlay, false, 0, old_zpos);
++	drm_atomic_helper_plane_reset(plane);
++	if (!plane->state)
+ 		return;
+-	}
+ 
+-	sun8i_ui_layer_update_coord(mixer, layer->channel,
+-				    layer->overlay, plane, zpos);
+-	sun8i_ui_layer_update_formats(mixer, layer->channel,
+-				      layer->overlay, plane);
+-	sun8i_ui_layer_update_buffer(mixer, layer->channel,
+-				     layer->overlay, plane);
+-	sun8i_ui_layer_enable(mixer, layer->channel, layer->overlay,
+-			      true, zpos, old_zpos);
++	plane->state->zpos = layer->channel;
+ }
+ 
+ static struct drm_plane_helper_funcs sun8i_ui_layer_helper_funcs = {
+ 	.prepare_fb	= drm_gem_fb_prepare_fb,
+ 	.atomic_check	= sun8i_ui_layer_atomic_check,
+-	.atomic_disable	= sun8i_ui_layer_atomic_disable,
+ 	.atomic_update	= sun8i_ui_layer_atomic_update,
+ };
+ 
+@@ -310,7 +339,7 @@ static const struct drm_plane_funcs sun8i_ui_layer_funcs = {
+ 	.atomic_duplicate_state	= drm_atomic_helper_plane_duplicate_state,
+ 	.destroy		= drm_plane_cleanup,
+ 	.disable_plane		= drm_atomic_helper_disable_plane,
+-	.reset			= drm_atomic_helper_plane_reset,
++	.reset			= sun8i_ui_layer_plane_reset,
+ 	.update_plane		= drm_atomic_helper_update_plane,
+ };
+ 
+@@ -339,9 +368,9 @@ static const u32 sun8i_ui_layer_formats[] = {
+ 
+ struct sun8i_ui_layer *sun8i_ui_layer_init_one(struct drm_device *drm,
+ 					       struct sun8i_mixer *mixer,
+-					       int index)
++					       int index,
++					       enum drm_plane_type type)
+ {
+-	enum drm_plane_type type = DRM_PLANE_TYPE_OVERLAY;
+ 	int channel = mixer->cfg->vi_num + index;
+ 	struct sun8i_ui_layer *layer;
+ 	unsigned int plane_cnt;
+@@ -351,9 +380,6 @@ struct sun8i_ui_layer *sun8i_ui_layer_init_one(struct drm_device *drm,
+ 	if (!layer)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	if (index == 0)
+-		type = DRM_PLANE_TYPE_PRIMARY;
+-
+ 	/* possible crtcs are set later */
+ 	ret = drm_universal_plane_init(drm, &layer->plane, 0,
+ 				       &sun8i_ui_layer_funcs,
+diff --git a/drivers/gpu/drm/sun4i/sun8i_ui_layer.h b/drivers/gpu/drm/sun4i/sun8i_ui_layer.h
+index f4ab1cf6cded..41d613fd2ae6 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_ui_layer.h
++++ b/drivers/gpu/drm/sun4i/sun8i_ui_layer.h
+@@ -58,5 +58,6 @@ plane_to_sun8i_ui_layer(struct drm_plane *plane)
+ 
+ struct sun8i_ui_layer *sun8i_ui_layer_init_one(struct drm_device *drm,
+ 					       struct sun8i_mixer *mixer,
+-					       int index);
++					       int index,
++					       enum drm_plane_type type);
+ #endif /* _SUN8I_UI_LAYER_H_ */
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index c0147af6a840..2ea3bf3e7561 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -18,10 +18,11 @@
+ #include "sun8i_vi_scaler.h"
+ 
+ static void sun8i_vi_layer_enable(struct sun8i_mixer *mixer, int channel,
+-				  int overlay, bool enable, unsigned int zpos,
+-				  unsigned int old_zpos)
++				  int overlay, bool was_enabled, bool enable,
++				  unsigned int zpos, unsigned int old_zpos)
+ {
+ 	u32 val, bld_base, ch_base;
++	unsigned int old_pipe_ch;
+ 
+ 	bld_base = sun8i_blender_base(mixer);
+ 	ch_base = sun8i_channel_base(mixer, channel);
+@@ -29,28 +30,56 @@ static void sun8i_vi_layer_enable(struct sun8i_mixer *mixer, int channel,
+ 	DRM_DEBUG_DRIVER("%sabling VI channel %d overlay %d\n",
+ 			 enable ? "En" : "Dis", channel, overlay);
+ 
+-	if (enable)
+-		val = SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN;
+-	else
+-		val = 0;
+-
++	/* We always update the layer enable bit, because it can clear
++	 * spontaneously for unknown reasons. */
++	val = enable ? SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN : 0;
+ 	regmap_update_bits(mixer->engine.regs,
+ 			   SUN8I_MIXER_CHAN_VI_LAYER_ATTR(ch_base, overlay),
+ 			   SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN, val);
+ 
+-	if (!enable || zpos != old_zpos) {
+-		regmap_update_bits(mixer->engine.regs,
+-				   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
+-				   SUN8I_MIXER_BLEND_PIPE_CTL_EN(old_zpos),
+-				   0);
+-
+-		regmap_update_bits(mixer->engine.regs,
++	/*
++	 * If this layer was enabled and is being disabled or if it is
++	 * enabled and just changing zpos, clear the old route, if it is
++	 * still configured to this layer in HW.
++	 */
++	if ((was_enabled && !enable) || (enable && zpos != old_zpos)) {
++		/* get channel the pipe for old_zpos is routed to from the HW */
++		regmap_read(mixer->engine.regs,
+ 				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+-				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos),
+-				   0);
++				   &old_pipe_ch);
++		old_pipe_ch &= SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos);
++		old_pipe_ch >>= SUN8I_MIXER_BLEND_ROUTE_PIPE_SHIFT(old_zpos);
++
++		/*
++		 * Check that pipe for old_zpos is still routed to our layer,
++		 * and clear/disable it if it is.
++		 */
++
++		if (old_pipe_ch == channel) {
++			DRM_DEBUG_DRIVER("chan=%d en=%d->%d zpos=%d->%d\n",
++			       channel, was_enabled, enable, old_zpos, zpos);
++
++			DRM_DEBUG_DRIVER("  disable pipe %d\n", old_zpos);
++
++			regmap_update_bits(mixer->engine.regs,
++					   SUN8I_MIXER_BLEND_ROUTE(bld_base),
++					   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos),
++					   0);
++
++			regmap_update_bits(mixer->engine.regs,
++					   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
++					   SUN8I_MIXER_BLEND_PIPE_CTL_EN(old_zpos),
++					   0);
++		}
+ 	}
+ 
+-	if (enable) {
++	/*
++	 * If enabling this layer or changin zpos, set route to this layer.
++	 */
++	if ((enable && !was_enabled) || (enable && zpos != old_zpos)) {
++		DRM_DEBUG_DRIVER("chan=%d en=%d->%d zpos=%d->%d\n",
++		       channel, was_enabled, enable, old_zpos, zpos);
++
+ 		val = SUN8I_MIXER_BLEND_PIPE_CTL_EN(zpos);
+ 
+ 		regmap_update_bits(mixer->engine.regs,
+@@ -63,6 +92,8 @@ static void sun8i_vi_layer_enable(struct sun8i_mixer *mixer, int channel,
+ 				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+ 				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(zpos),
+ 				   val);
++
++		DRM_DEBUG_DRIVER("  enable pipe %d <- ch %d\n", zpos, channel);
+ 	}
+ }
+ 
+@@ -366,45 +397,43 @@ static int sun8i_vi_layer_atomic_check(struct drm_plane *plane,
+ 						   true, true);
+ }
+ 
+-static void sun8i_vi_layer_atomic_disable(struct drm_plane *plane,
+-					  struct drm_plane_state *old_state)
++static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
++					 struct drm_plane_state *old_state)
+ {
+ 	struct sun8i_vi_layer *layer = plane_to_sun8i_vi_layer(plane);
++	unsigned int zpos = plane->state->normalized_zpos;
+ 	unsigned int old_zpos = old_state->normalized_zpos;
+ 	struct sun8i_mixer *mixer = layer->mixer;
++	bool was_enabled = old_state->crtc && old_state->visible;
++	bool enable = plane->state->crtc && plane->state->visible;
+ 
+-	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay, false, 0,
+-			      old_zpos);
++	if (enable) {
++		sun8i_vi_layer_update_coord(mixer, layer->channel,
++					    layer->overlay, plane, zpos);
++		sun8i_vi_layer_update_formats(mixer, layer->channel,
++					      layer->overlay, plane);
++		sun8i_vi_layer_update_buffer(mixer, layer->channel,
++					     layer->overlay, plane);
++	}
++
++	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay,
++			      was_enabled, enable, zpos, old_zpos);
+ }
+ 
+-static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+-					 struct drm_plane_state *old_state)
++void sun8i_vi_layer_plane_reset(struct drm_plane *plane)
+ {
+ 	struct sun8i_vi_layer *layer = plane_to_sun8i_vi_layer(plane);
+-	unsigned int zpos = plane->state->normalized_zpos;
+-	unsigned int old_zpos = old_state->normalized_zpos;
+-	struct sun8i_mixer *mixer = layer->mixer;
+ 
+-	if (!plane->state->visible) {
+-		sun8i_vi_layer_enable(mixer, layer->channel,
+-				      layer->overlay, false, 0, old_zpos);
++	drm_atomic_helper_plane_reset(plane);
++	if (!plane->state)
+ 		return;
+-	}
+ 
+-	sun8i_vi_layer_update_coord(mixer, layer->channel,
+-				    layer->overlay, plane, zpos);
+-	sun8i_vi_layer_update_formats(mixer, layer->channel,
+-				      layer->overlay, plane);
+-	sun8i_vi_layer_update_buffer(mixer, layer->channel,
+-				     layer->overlay, plane);
+-	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay,
+-			      true, zpos, old_zpos);
++	plane->state->zpos = layer->channel;
+ }
+ 
+ static struct drm_plane_helper_funcs sun8i_vi_layer_helper_funcs = {
+ 	.prepare_fb	= drm_gem_fb_prepare_fb,
+ 	.atomic_check	= sun8i_vi_layer_atomic_check,
+-	.atomic_disable	= sun8i_vi_layer_atomic_disable,
+ 	.atomic_update	= sun8i_vi_layer_atomic_update,
+ };
+ 
+@@ -413,7 +442,7 @@ static const struct drm_plane_funcs sun8i_vi_layer_funcs = {
+ 	.atomic_duplicate_state	= drm_atomic_helper_plane_duplicate_state,
+ 	.destroy		= drm_plane_cleanup,
+ 	.disable_plane		= drm_atomic_helper_disable_plane,
+-	.reset			= drm_atomic_helper_plane_reset,
++	.reset			= sun8i_vi_layer_plane_reset,
+ 	.update_plane		= drm_atomic_helper_update_plane,
+ };
+ 
+diff --git a/drivers/iommu/io-pgtable-arm.c b/drivers/iommu/io-pgtable-arm.c
+index dc7bcf858b6d..b4072a18e45d 100644
+--- a/drivers/iommu/io-pgtable-arm.c
++++ b/drivers/iommu/io-pgtable-arm.c
+@@ -440,7 +440,13 @@ static arm_lpae_iopte arm_lpae_prot_to_pte(struct arm_lpae_io_pgtable *data,
+ 				<< ARM_LPAE_PTE_ATTRINDX_SHIFT);
+ 	}
+ 
+-	if (prot & IOMMU_CACHE)
++	/*
++	 * Also Mali has its own notions of shareability wherein its Inner
++	 * domain covers the cores within the GPU, and its Outer domain is
++	 * "outside the GPU" (i.e. either the Inner or System domain in CPU
++	 * terms, depending on coherency).
++	 */
++	if (prot & IOMMU_CACHE && data->iop.fmt != ARM_MALI_LPAE)
+ 		pte |= ARM_LPAE_PTE_SH_IS;
+ 	else
+ 		pte |= ARM_LPAE_PTE_SH_OS;
+@@ -1049,6 +1055,9 @@ arm_mali_lpae_alloc_pgtable(struct io_pgtable_cfg *cfg, void *cookie)
+ 	cfg->arm_mali_lpae_cfg.transtab = virt_to_phys(data->pgd) |
+ 					  ARM_MALI_LPAE_TTBR_READ_INNER |
+ 					  ARM_MALI_LPAE_TTBR_ADRMODE_TABLE;
++	if (cfg->coherent_walk)
++		cfg->arm_mali_lpae_cfg.transtab |= ARM_MALI_LPAE_TTBR_SHARE_OUTER;
++
+ 	return &data->iop;
+ 
+ out_free_data:
+diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
+index b3fa193de846..d11dd37e9500 100644
+--- a/drivers/mmc/core/mmc.c
++++ b/drivers/mmc/core/mmc.c
+@@ -6,7 +6,7 @@
+  *  Copyright (C) 2005-2007 Pierre Ossman, All Rights Reserved.
+  *  MMCv4 support Copyright (C) 2006 Philip Langdale, All Rights Reserved.
+  */
+-
++#include <linux/moduleparam.h>
+ #include <linux/err.h>
+ #include <linux/of.h>
+ #include <linux/slab.h>
+@@ -62,6 +62,10 @@ static const unsigned int taac_mant[] = {
+ 		__res & __mask;						\
+ 	})
+ 
++/* Enable / disable command queue support */
++static bool mmc_cmdqueue_support = true;
++core_param(mmc_cmdqueue, mmc_cmdqueue_support, bool, S_IRUGO);
++
+ /*
+  * Given the decoded CSD structure, decode the raw CID to our CID structure.
+  */
+@@ -1839,15 +1843,20 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
+ 	 */
+ 	card->ext_csd.cmdq_en = false;
+ 	if (card->ext_csd.cmdq_support && host->caps2 & MMC_CAP2_CQE) {
+-		err = mmc_cmdq_enable(card);
+-		if (err && err != -EBADMSG)
+-			goto free_card;
+-		if (err) {
+-			pr_warn("%s: Enabling CMDQ failed\n",
+-				mmc_hostname(card->host));
+-			card->ext_csd.cmdq_support = false;
+-			card->ext_csd.cmdq_depth = 0;
+-			err = 0;
++		if (mmc_cmdqueue_support) {
++			err = mmc_cmdq_enable(card);
++			if (err && err != -EBADMSG)
++				 goto free_card;
++			if (err) {
++				pr_warn("%s: Enabling CMDQ failed\n",
++					mmc_hostname(card->host));
++				card->ext_csd.cmdq_support = false;
++				card->ext_csd.cmdq_depth = 0;
++				err = 0;
++			}
++		} else {
++			pr_info("%s: CMDQ support disabled in kernel\n",
++				mmc_hostname(host));
+ 		}
+ 	}
+ 	/*
+diff --git a/drivers/mmc/core/pwrseq_simple.c b/drivers/mmc/core/pwrseq_simple.c
+index ea4d3670560e..38fe7e29aba6 100644
+--- a/drivers/mmc/core/pwrseq_simple.c
++++ b/drivers/mmc/core/pwrseq_simple.c
+@@ -80,10 +80,8 @@ static void mmc_pwrseq_simple_post_power_on(struct mmc_host *host)
+ 		msleep(pwrseq->post_power_on_delay_ms);
+ }
+ 
+-static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
++static void __mmc_pwrseq_simple_power_off(struct mmc_pwrseq_simple *pwrseq)
+ {
+-	struct mmc_pwrseq_simple *pwrseq = to_pwrseq_simple(host->pwrseq);
+-
+ 	mmc_pwrseq_simple_set_gpios_value(pwrseq, 1);
+ 
+ 	if (pwrseq->power_off_delay_us)
+@@ -96,6 +94,12 @@ static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
+ 	}
+ }
+ 
++static void mmc_pwrseq_simple_power_off(struct mmc_host *host)
++{
++	struct mmc_pwrseq_simple *pwrseq = to_pwrseq_simple(host->pwrseq);
++	__mmc_pwrseq_simple_power_off(pwrseq);
++}
++
+ static const struct mmc_pwrseq_ops mmc_pwrseq_simple_ops = {
+ 	.pre_power_on = mmc_pwrseq_simple_pre_power_on,
+ 	.post_power_on = mmc_pwrseq_simple_post_power_on,
+@@ -151,9 +155,18 @@ static int mmc_pwrseq_simple_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static void mmc_pwrseq_simple_shutdown(struct platform_device *pdev)
++{
++	struct mmc_pwrseq_simple *pwrseq = platform_get_drvdata(pdev);
++
++	dev_info(&pdev->dev, "Turning off mmc\n");
++	__mmc_pwrseq_simple_power_off(pwrseq);
++}
++
+ static struct platform_driver mmc_pwrseq_simple_driver = {
+ 	.probe = mmc_pwrseq_simple_probe,
+ 	.remove = mmc_pwrseq_simple_remove,
++	.shutdown = mmc_pwrseq_simple_shutdown,
+ 	.driver = {
+ 		.name = "pwrseq_simple",
+ 		.of_match_table = mmc_pwrseq_simple_of_match,
+diff --git a/drivers/net/usb/smsc95xx.c b/drivers/net/usb/smsc95xx.c
+index bb4ccbda031a..84e40f5aea9f 100644
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -48,6 +48,7 @@
+ #define SUSPEND_SUSPEND3		(0x08)
+ #define SUSPEND_ALLMODES		(SUSPEND_SUSPEND0 | SUSPEND_SUSPEND1 | \
+ 					 SUSPEND_SUSPEND2 | SUSPEND_SUSPEND3)
++#define MAC_ADDR_LEN                    (6)
+ 
+ #define CARRIER_CHECK_DELAY (2 * HZ)
+ 
+@@ -70,6 +71,10 @@ static bool turbo_mode = true;
+ module_param(turbo_mode, bool, 0644);
+ MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
+ 
++static char *macaddr = ":";
++module_param(macaddr, charp, 0);
++MODULE_PARM_DESC(macaddr, "MAC address");
++
+ static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
+ 					    u32 *data, int in_pm)
+ {
+@@ -899,8 +904,59 @@ static int smsc95xx_ioctl(struct net_device *netdev, struct ifreq *rq, int cmd)
+ 	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
+ }
+ 
++/* Check the macaddr module parameter for a MAC address */
++static int smsc95xx_is_macaddr_param(struct usbnet *dev, u8 *dev_mac)
++{
++       int i, j, got_num, num;
++       u8 mtbl[MAC_ADDR_LEN];
++
++       if (macaddr[0] == ':')
++               return 0;
++
++       i = 0;
++       j = 0;
++       num = 0;
++       got_num = 0;
++       while (j < MAC_ADDR_LEN) {
++               if (macaddr[i] && macaddr[i] != ':') {
++                       got_num++;
++                       if ('0' <= macaddr[i] && macaddr[i] <= '9')
++                               num = num * 16 + macaddr[i] - '0';
++                       else if ('A' <= macaddr[i] && macaddr[i] <= 'F')
++                               num = num * 16 + 10 + macaddr[i] - 'A';
++                       else if ('a' <= macaddr[i] && macaddr[i] <= 'f')
++                               num = num * 16 + 10 + macaddr[i] - 'a';
++                       else
++                               break;
++                       i++;
++               } else if (got_num == 2) {
++                       mtbl[j++] = (u8) num;
++                       num = 0;
++                       got_num = 0;
++                       i++;
++               } else {
++                       break;
++               }
++       }
++
++       if (j == MAC_ADDR_LEN) {
++               netif_dbg(dev, ifup, dev->net, "Overriding MAC address with: "
++               "%02x:%02x:%02x:%02x:%02x:%02x\n", mtbl[0], mtbl[1], mtbl[2],
++                                               mtbl[3], mtbl[4], mtbl[5]);
++               for (i = 0; i < MAC_ADDR_LEN; i++)
++                       dev_mac[i] = mtbl[i];
++               return 1;
++       } else {
++               return 0;
++       }
++}
++
+ static void smsc95xx_init_mac_address(struct usbnet *dev)
+ {
++       /* Check module parameters */
++       if (smsc95xx_is_macaddr_param(dev, dev->net->dev_addr))
++               return;
++
+ 	const u8 *mac_addr;
+ 
+ 	/* maybe the boot loader passed the MAC address in devicetree */
+diff --git a/drivers/pci/controller/pcie-rockchip-host.c b/drivers/pci/controller/pcie-rockchip-host.c
+index 9705059523a6..51f1bfb1343f 100644
+--- a/drivers/pci/controller/pcie-rockchip-host.c
++++ b/drivers/pci/controller/pcie-rockchip-host.c
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
++#include <linux/moduleparam.h>
+ #include <linux/of_address.h>
+ #include <linux/of_device.h>
+ #include <linux/of_pci.h>
+@@ -39,6 +40,9 @@
+ #include "../pci.h"
+ #include "pcie-rockchip.h"
+ 
++static int bus_scan_delay = -1;
++module_param_named(pcie_rk_bus_scan_delay, bus_scan_delay, int, S_IRUGO);
++
+ static void rockchip_pcie_enable_bw_int(struct rockchip_pcie *rockchip)
+ {
+ 	u32 status;
+@@ -942,6 +946,7 @@ static int rockchip_pcie_probe(struct platform_device *pdev)
+ 	struct device *dev = &pdev->dev;
+ 	struct pci_host_bridge *bridge;
+ 	int err;
++	u32 delay = 0;
+ 
+ 	if (!dev->of_node)
+ 		return -ENODEV;
+@@ -993,6 +1027,18 @@ static int rockchip_pcie_probe(struct platform_device *pdev)
+ 	bridge->sysdata = rockchip;
+ 	bridge->ops = &rockchip_pcie_ops;
+ 
++	/* Prefer command-line param over device tree */
++	if (bus_scan_delay > 0) {
++		delay = bus_scan_delay;
++		dev_info(dev, "wait %u ms (from command-line) before bus scan\n", delay);
++	} else if (rockchip->bus_scan_delay > 0 && bus_scan_delay < 0) {
++		delay = rockchip->bus_scan_delay;
++		dev_info(dev, "wait %u ms (from device tree) before bus scan\n", delay);
++	}
++	if (delay > 0) {
++		msleep(delay);
++	}
++
+ 	err = pci_host_probe(bridge);
+ 	if (err < 0)
+ 		goto err_remove_irq_domain;
+diff --git a/drivers/pci/controller/pcie-rockchip.c b/drivers/pci/controller/pcie-rockchip.c
+index 904dec0d3a88..ac019a8905b2 100644
+--- a/drivers/pci/controller/pcie-rockchip.c
++++ b/drivers/pci/controller/pcie-rockchip.c
+@@ -149,6 +149,14 @@ int rockchip_pcie_parse_dt(struct rockchip_pcie *rockchip)
+ 		return PTR_ERR(rockchip->clk_pcie_pm);
+ 	}
+ 
++	err = of_property_read_u32(node, "bus-scan-delay-ms", &rockchip->bus_scan_delay);
++	if (err) {
++		dev_info(dev, "no bus-scan-delay-ms in device tree, default 0 ms\n");
++		rockchip->bus_scan_delay = 0;
++	} else {
++		dev_info(dev, "bus-scan-delay-ms in device tree is %u ms\n", rockchip->bus_scan_delay);
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(rockchip_pcie_parse_dt);
+diff --git a/drivers/pci/controller/pcie-rockchip.h b/drivers/pci/controller/pcie-rockchip.h
+index c7d0178fc8c2..758524a33cb4 100644
+--- a/drivers/pci/controller/pcie-rockchip.h
++++ b/drivers/pci/controller/pcie-rockchip.h
+@@ -306,6 +306,7 @@ struct rockchip_pcie {
+ 	phys_addr_t msg_bus_addr;
+ 	bool is_rc;
+ 	struct resource *mem_res;
++	u32	bus_scan_delay;
+ };
+ 
+ static u32 rockchip_pcie_read(struct rockchip_pcie *rockchip, u32 reg)
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c b/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
+index 9ca20c947283..ca91a01f321c 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-hdmi.c
+@@ -316,6 +316,77 @@ static const struct pre_pll_config pre_pll_cfg_table[] = {
+ 	{594000000, 371250000, 4, 495, 1, 2, 0,  1, 3, 1, 1, 1, 0},
+ 	{593407000, 593407000, 1,  98, 0, 2, 0,  1, 0, 1, 1, 0, 0xE6AE6B},
+ 	{594000000, 594000000, 1,  99, 0, 2, 0,  1, 0, 1, 1, 0, 0},
++	{ 25175000,  25175000, 30, 1007, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 31500000,  31500000,  1,   21, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 33750000,  33750000,  1,   45, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 35500000,  35500000,  3,   71, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 36000000,  36000000,  1,   12, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 49500000,  49500000,  1,   33, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 50000000,  50000000,  3,   50, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 56250000,  56250000,  1,   75, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 65000000,  65000000,  3,   65, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 68250000,  68250000,  1,   91, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 71000000,  71000000,  3,   71, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 72000000,  72000000,  1,   24, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 73250000,  73250000,  3,  293, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 75000000,  75000000,  1,   25, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{ 78750000,  78750000,  1,  105, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 79500000,  79500000,  1,   53, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 83500000,  83500000,  3,  167, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 85500000,  85500000,  1,   57, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{ 88750000,  88750000,  3,  355, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{ 94500000,  94500000,  1,   63, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{101000000, 101000000,  3,  101, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{102250000, 102250000,  3,  409, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{106500000, 106500000,  1,   71, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{108000000, 108000000,  1,   36, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{115500000, 115500000,  1,   77, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{117500000, 117500000,  3,  235, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{119000000, 119000000,  3,  119, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{121750000, 121750000,  3,  487, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{122500000, 122500000,  3,  245, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{135000000, 135000000,  1,   45, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{136750000, 136750000,  3,  547, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{140250000, 140250000,  1,  187, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{146250000, 146250000,  1,  195, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{148250000, 148250000,  3,  593, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{154000000, 154000000,  3,  154, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{156000000, 156000000,  1,   52, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{156750000, 156750000,  1,  209, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{157000000, 157000000,  3,  157, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{157500000, 157500000,  1,  105, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{162000000, 162000000,  1,   54, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{175500000, 175500000,  1,  117, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{179500000, 179500000,  3,  359, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{182750000, 182750000,  3,  731, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{187000000, 187000000,  3,  187, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{187250000, 187250000,  3,  749, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{189000000, 189000000,  1,   63, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{193250000, 193250000,  3,  773, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{202500000, 202500000,  1,  135, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{204750000, 204750000,  1,  273, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{208000000, 208000000,  3,  208, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{214750000, 214750000,  3,  859, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{218250000, 218250000,  1,  291, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{229500000, 229500000,  1,  153, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{234000000, 234000000,  1,   78, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{241500000, 241500000,  1,  161, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{245250000, 245250000,  1,  327, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{245500000, 245500000,  3,  491, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{261000000, 261000000,  1,   87, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{268250000, 268250000,  3, 1073, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{268500000, 268500000,  1,  179, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{281250000, 281250000,  1,  375, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{288000000, 288000000,  1,   96, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{312250000, 312250000,  3, 1249, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{317000000, 317000000,  3,  317, 0, 1, 1, 1, 0, 2, 2, 0, 0},
++	{333250000, 333250000,  3, 1333, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{348500000, 348500000,  3,  697, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{356500000, 356500000,  3,  713, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{380500000, 380500000,  3,  761, 1, 1, 1, 1, 2, 2, 2, 0, 0},
++	{443250000, 443250000,  1,  591, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{505250000, 505250000,  3, 2021, 1, 2, 2, 1, 2, 3, 4, 0, 0},
++	{552750000, 552750000,  1,  737, 1, 2, 2, 1, 2, 3, 4, 0, 0},
+ 	{ /* sentinel */ }
+ };
+ 
+diff --git a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+index 46ebdb1460a3..4adb976287d2 100644
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -69,6 +69,7 @@ enum usb_chg_state {
+ static const unsigned int rockchip_usb2phy_extcon_cable[] = {
+ 	EXTCON_USB,
+ 	EXTCON_USB_HOST,
++	EXTCON_USB_VBUS_EN,
+ 	EXTCON_CHG_USB_SDP,
+ 	EXTCON_CHG_USB_CDP,
+ 	EXTCON_CHG_USB_DCP,
+@@ -129,13 +130,29 @@ struct rockchip_usb2phy_port_cfg {
+ 	struct usb2phy_reg	bvalid_det_en;
+ 	struct usb2phy_reg	bvalid_det_st;
+ 	struct usb2phy_reg	bvalid_det_clr;
++	struct usb2phy_reg	bypass_dm_en;
++	struct usb2phy_reg	bypass_sel;
++	struct usb2phy_reg	bypass_iomux;
++	struct usb2phy_reg	bypass_bc;
++	struct usb2phy_reg	bypass_otg;
++	struct usb2phy_reg	bypass_host;
+ 	struct usb2phy_reg	ls_det_en;
+ 	struct usb2phy_reg	ls_det_st;
+ 	struct usb2phy_reg	ls_det_clr;
++	struct usb2phy_reg	iddig_output;
++	struct usb2phy_reg	iddig_en;
++	struct usb2phy_reg	idfall_det_en;
++	struct usb2phy_reg	idfall_det_st;
++	struct usb2phy_reg	idfall_det_clr;
++	struct usb2phy_reg	idrise_det_en;
++	struct usb2phy_reg	idrise_det_st;
++	struct usb2phy_reg	idrise_det_clr;
+ 	struct usb2phy_reg	utmi_avalid;
+ 	struct usb2phy_reg	utmi_bvalid;
++	struct usb2phy_reg	utmi_iddig;
+ 	struct usb2phy_reg	utmi_ls;
+ 	struct usb2phy_reg	utmi_hstdet;
++	struct usb2phy_reg	vbus_det_en;
+ };
+ 
+ /**
+@@ -178,13 +195,16 @@ struct rockchip_usb2phy_port {
+ 	unsigned int	port_id;
+ 	bool		suspended;
+ 	bool		vbus_attached;
++	bool        vbus_enabled;
+ 	int		bvalid_irq;
+ 	int		ls_irq;
+ 	int		otg_mux_irq;
++	int		id_irq;
+ 	struct mutex	mutex;
+ 	struct		delayed_work chg_work;
+ 	struct		delayed_work otg_sm_work;
+ 	struct		delayed_work sm_work;
++	struct      regulator *vbus;
+ 	const struct	rockchip_usb2phy_port_cfg *port_cfg;
+ 	struct notifier_block	event_nb;
+ 	enum usb_otg_state	state;
+@@ -214,6 +234,7 @@ struct rockchip_usb2phy {
+ 	struct clk	*clk;
+ 	struct clk	*clk480m;
+ 	struct clk_hw	clk480m_hw;
++	bool            edev_self;
+ 	enum usb_chg_state	chg_state;
+ 	enum power_supply_type	chg_type;
+ 	u8			dcd_retries;
+@@ -393,6 +414,8 @@ static int rockchip_usb2phy_extcon_register(struct rockchip_usb2phy *rphy)
+ 			dev_err(rphy->dev, "failed to register extcon device\n");
+ 			return ret;
+ 		}
++
++		rphy->edev_self = true;
+ 	}
+ 
+ 	rphy->edev = edev;
+@@ -400,6 +423,28 @@ static int rockchip_usb2phy_extcon_register(struct rockchip_usb2phy *rphy)
+ 	return 0;
+ }
+ 
++static int rockchip_set_vbus_power(struct rockchip_usb2phy_port *rport,bool en)
++{
++	int ret = 0;
++
++	if (!rport->vbus)
++		return 0;
++
++	if (en && !rport->vbus_enabled) {
++		ret = regulator_enable(rport->vbus);
++		if (ret)
++			dev_err(&rport->phy->dev,
++					"Failed to enable VBUS supply\n");
++		} else if (!en && rport->vbus_enabled) {
++			ret = regulator_disable(rport->vbus);
++		}
++
++	if (ret == 0)
++		rport->vbus_enabled = en;
++
++	return ret;
++}
++
+ static int rockchip_usb2phy_init(struct phy *phy)
+ {
+ 	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+@@ -407,10 +452,11 @@ static int rockchip_usb2phy_init(struct phy *phy)
+ 	int ret = 0;
+ 
+ 	mutex_lock(&rport->mutex);
+-
++printk("busb rport->port_id=%d\n",rport->port_id );
+ 	if (rport->port_id == USB2PHY_PORT_OTG) {
+ 		if (rport->mode != USB_DR_MODE_HOST &&
+ 		    rport->mode != USB_DR_MODE_UNKNOWN) {
++			printk("busb enabled irq\n");
+ 			/* clear bvalid status and enable bvalid detect irq */
+ 			ret = property_enable(rphy->grf,
+ 					      &rport->port_cfg->bvalid_det_clr,
+@@ -423,6 +469,31 @@ static int rockchip_usb2phy_init(struct phy *phy)
+ 					      true);
+ 			if (ret)
+ 				goto out;
++		
++			/* clear id status and enable id detect irq */
++			ret = property_enable(rphy->grf,
++					      &rport->port_cfg->idfall_det_clr,
++					      true);
++			if (ret)
++				goto out;
++
++			ret = property_enable(rphy->grf,
++					      &rport->port_cfg->idfall_det_en,
++					      true);
++			if (ret)
++				goto out;
++
++			ret = property_enable(rphy->grf,
++					      &rport->port_cfg->idrise_det_clr,
++					      true);
++			if (ret)
++				goto out;
++
++			ret = property_enable(rphy->grf,
++					      &rport->port_cfg->idrise_det_en,
++					      true);
++			if (ret)
++				goto out;
+ 
+ 			schedule_delayed_work(&rport->otg_sm_work,
+ 					      OTG_SCHEDULE_DELAY * 3);
+@@ -458,7 +529,7 @@ static int rockchip_usb2phy_power_on(struct phy *phy)
+ 	int ret;
+ 
+ 	dev_dbg(&rport->phy->dev, "port power on\n");
+-
++printk("busb port power on\n");
+ 	if (!rport->suspended)
+ 		return 0;
+ 
+@@ -502,7 +573,7 @@ static int rockchip_usb2phy_power_off(struct phy *phy)
+ static int rockchip_usb2phy_exit(struct phy *phy)
+ {
+ 	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+-
++printk("busb rockchip_usb2phy_exit \n");
+ 	if (rport->port_id == USB2PHY_PORT_OTG &&
+ 	    rport->mode != USB_DR_MODE_HOST &&
+ 	    rport->mode != USB_DR_MODE_UNKNOWN) {
+@@ -514,11 +585,61 @@ static int rockchip_usb2phy_exit(struct phy *phy)
+ 	return 0;
+ }
+ 
++static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode , int submode)
++{
++	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
++	bool vbus_det_en;
++	int ret = 0;
++	if (rport->port_id != USB2PHY_PORT_OTG)
++		return ret;
++
++printk("busb rockchip_usb2phy_set_mode mode = %d,submode=%d\n",mode,submode);
++	switch (mode) {
++	case PHY_MODE_USB_OTG:
++		/*
++		 * In case of using vbus to detect connect state by u2phy,
++		 * enable vbus detect on otg mode.
++		 *
++		 * fallthrough
++		 */
++	case PHY_MODE_USB_DEVICE:
++		/* Disable VBUS supply */
++		rockchip_set_vbus_power(rport, false);
++		extcon_set_state_sync(rphy->edev, EXTCON_USB_VBUS_EN, false);
++		vbus_det_en = true;
++		break;
++	case PHY_MODE_USB_HOST:
++		/* Enable VBUS supply */
++		ret = rockchip_set_vbus_power(rport, true);
++		if (ret) {
++			dev_err(&rport->phy->dev,
++				"Failed to set host mode\n");
++			return ret;
++		}
++
++		extcon_set_state_sync(rphy->edev, EXTCON_USB_VBUS_EN, true);
++		/* fallthrough */
++	case PHY_MODE_INVALID:
++		vbus_det_en = false;
++		break;
++	default:
++		dev_info(&rport->phy->dev, "illegal mode\n");
++		printk("busb illegal mode\n");
++		return ret;
++	}
++
++	ret = property_enable(rphy->grf, &rport->port_cfg->vbus_det_en, vbus_det_en);
++
++	return ret;
++}
++
+ static const struct phy_ops rockchip_usb2phy_ops = {
+ 	.init		= rockchip_usb2phy_init,
+ 	.exit		= rockchip_usb2phy_exit,
+ 	.power_on	= rockchip_usb2phy_power_on,
+ 	.power_off	= rockchip_usb2phy_power_off,
++//	.set_mode   = rockchip_usb2phy_set_mode,
+ 	.owner		= THIS_MODULE,
+ };
+ 
+@@ -540,7 +661,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ 	delay = OTG_SCHEDULE_DELAY;
+ 	dev_dbg(&rport->phy->dev, "%s otg sm work\n",
+ 		usb_otg_state_string(rport->state));
+-
++	printk("busb rockchip_usb2phy_otg_sm_work %s otg sm work %d\n",usb_otg_state_string(rport->state),rport->state);
+ 	switch (rport->state) {
+ 	case OTG_STATE_UNDEFINED:
+ 		rport->state = OTG_STATE_B_IDLE;
+@@ -548,13 +669,16 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ 			rockchip_usb2phy_power_off(rport->phy);
+ 		fallthrough;
+ 	case OTG_STATE_B_IDLE:
++		printk("busb HOST = %d,VBUS_EN=%d,vbus_attached=%d\n",extcon_get_state(rphy->edev, EXTCON_USB_HOST),extcon_get_state(rphy->edev,EXTCON_USB_VBUS_EN),rport->vbus_attached);
+ 		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
++			printk("busb usb otg host connect\n");
+ 			rport->state = OTG_STATE_A_HOST;
+ 			rockchip_usb2phy_power_on(rport->phy);
+ 			return;
+ 		} else if (vbus_attach) {
+ 			dev_dbg(&rport->phy->dev, "vbus_attach\n");
++			printk("busb vbus_attach rphy->chg_state = %d\n",rphy->chg_state);
+ 			switch (rphy->chg_state) {
+ 			case USB_CHG_STATE_UNDEFINED:
+ 				schedule_delayed_work(&rport->chg_work, 0);
+@@ -689,7 +813,7 @@ static void rockchip_chg_detect_work(struct work_struct *work)
+ 	struct regmap *base = get_reg_base(rphy);
+ 	bool is_dcd, tmout, vout;
+ 	unsigned long delay;
+-
++printk("busb chg detection work state = %d\n",rphy->chg_state);
+ 	dev_dbg(&rport->phy->dev, "chg detection work state = %d\n",
+ 		rphy->chg_state);
+ 	switch (rphy->chg_state) {
+@@ -923,6 +1047,42 @@ static irqreturn_t rockchip_usb2phy_bvalid_irq(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
++static irqreturn_t rockchip_usb2phy_id_irq(int irq, void *data)
++{
++	struct rockchip_usb2phy_port *rport = data;
++	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
++	bool cable_vbus_state = false;
++printk("brian rockchip_usb2phy_id_irq \n");
++	if (!property_enabled(rphy->grf, &rport->port_cfg->idfall_det_st) &&
++	    !property_enabled(rphy->grf, &rport->port_cfg->idrise_det_st))
++		return IRQ_NONE;
++
++	mutex_lock(&rport->mutex);
++
++	/* clear id fall or rise detect irq pending status */
++	if (property_enabled(rphy->grf, &rport->port_cfg->idfall_det_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->idfall_det_clr,
++				true);
++		cable_vbus_state = true;
++	} else if (property_enabled(rphy->grf, &rport->port_cfg->idrise_det_st)) {
++		property_enable(rphy->grf, &rport->port_cfg->idrise_det_clr,
++				true);
++		cable_vbus_state = false;
++	}
++
++	extcon_set_state(rphy->edev, EXTCON_USB_HOST, cable_vbus_state);
++	extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, cable_vbus_state);
++
++	extcon_sync(rphy->edev, EXTCON_USB_HOST);
++	extcon_sync(rphy->edev, EXTCON_USB_VBUS_EN);
++
++	rockchip_set_vbus_power(rport, cable_vbus_state);
++
++	mutex_unlock(&rport->mutex);
++
++	return IRQ_HANDLED;
++}
++
+ static irqreturn_t rockchip_usb2phy_otg_mux_irq(int irq, void *data)
+ {
+ 	struct rockchip_usb2phy_port *rport = data;
+@@ -980,7 +1140,8 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
+ 					  struct rockchip_usb2phy_port *rport,
+ 					  struct device_node *child_np)
+ {
+-	int ret;
++	int ret = 0;
++	int iddig;
+ 
+ 	rport->port_id = USB2PHY_PORT_OTG;
+ 	rport->port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+@@ -994,13 +1155,34 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
+ 	 */
+ 	rport->suspended = true;
+ 	rport->vbus_attached = false;
++	rport->vbus_enabled = false;
+ 
++	rport->vbus = devm_regulator_get_optional(&rport->phy->dev, "vbus");
++	if (IS_ERR(rport->vbus)) {
++		ret = PTR_ERR(rport->vbus);
++		if (ret == -EPROBE_DEFER)
++			return ret;
++		printk("busb Failed to get VBUS supply regulator\n");
++		dev_warn(&rport->phy->dev, "Failed to get VBUS supply regulator\n");
++		rport->vbus = NULL;
++	}
++	if(rport->vbus != NULL)
++		printk("busb get rport->vbus ok\n");
+ 	mutex_init(&rport->mutex);
+ 
+ 	rport->mode = of_usb_get_dr_mode_by_phy(child_np, -1);
+ 	if (rport->mode == USB_DR_MODE_HOST ||
+ 	    rport->mode == USB_DR_MODE_UNKNOWN) {
+-		ret = 0;
++		if(rphy->edev_self) {
++			extcon_set_state(rphy->edev, EXTCON_USB, false);
++			extcon_set_state(rphy->edev, EXTCON_USB_HOST, true);
++			extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, true);
++			ret = rockchip_set_vbus_power(rport, true);
++			printk("busb rockchip_set_vbus_power ret=%d\n",ret);
++			if(ret)
++				return ret;
++		}	
++		//ret = 0;
+ 		goto out;
+ 	}
+ 
+@@ -1044,6 +1226,37 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
+ 				"failed to request otg-bvalid irq handle\n");
+ 			goto out;
+ 		}
++
++		if (rphy->edev_self) {
++		
++			rport->id_irq = of_irq_get_byname(child_np, "otg-id");
++			if (rport->id_irq < 0) {
++				dev_err(rphy->dev, "no otg id irq provided\n");
++				ret = rport->id_irq;
++				goto out;
++			}
++
++			ret = devm_request_threaded_irq(rphy->dev, rport->id_irq, NULL,
++							rockchip_usb2phy_id_irq,
++							IRQF_ONESHOT,
++							"rockchip_usb2phy_id", rport);
++			if (ret) {
++				dev_err(rphy->dev, "failed to request otg-id irq handle\n");
++				return ret;
++			}
++
++			iddig = property_enabled(rphy->grf, &rport->port_cfg->utmi_iddig);
++			if(!iddig) {
++				extcon_set_state(rphy->edev, EXTCON_USB, false);
++				extcon_set_state(rphy->edev, EXTCON_USB_HOST, true);
++				extcon_set_state(rphy->edev, EXTCON_USB_VBUS_EN, true);
++
++				ret = rockchip_set_vbus_power(rport, true);
++				printk("busb rockchip_set_vbus_power ret=%d\n",ret);
++				if (ret)
++					return ret;
++			}
++		}
+ 	}
+ 
+ 	if (!IS_ERR(rphy->edev)) {
+@@ -1108,6 +1321,7 @@ static int rockchip_usb2phy_probe(struct platform_device *pdev)
+ 	phy_cfgs = match->data;
+ 	rphy->chg_state = USB_CHG_STATE_UNDEFINED;
+ 	rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
++	rphy->edev_self = false;
+ 	platform_set_drvdata(pdev, rphy);
+ 
+ 	ret = rockchip_usb2phy_extcon_register(rphy);
+@@ -1329,6 +1543,17 @@ static const struct rockchip_usb2phy_cfg rk3399_phy_cfgs[] = {
+ 				.bvalid_det_en	= { 0xe3c0, 3, 3, 0, 1 },
+ 				.bvalid_det_st	= { 0xe3e0, 3, 3, 0, 1 },
+ 				.bvalid_det_clr	= { 0xe3d0, 3, 3, 0, 1 },
++				.bypass_dm_en	= { 0xe450, 2, 2, 0, 1 },
++				.bypass_sel	= { 0xe450, 3, 3, 0, 1 },
++				.idfall_det_en	= { 0xe3c0, 5, 5, 0, 1 },
++				.idfall_det_st	= { 0xe3e0, 5, 5, 0, 1 },
++				.idfall_det_clr	= { 0xe3d0, 5, 5, 0, 1 },
++				.idrise_det_en	= { 0xe3c0, 4, 4, 0, 1 },
++				.idrise_det_st	= { 0xe3e0, 4, 4, 0, 1 },
++				.idrise_det_clr	= { 0xe3d0, 4, 4, 0, 1 },
++				.ls_det_en	= { 0xe3c0, 2, 2, 0, 1 },
++				.ls_det_st	= { 0xe3e0, 2, 2, 0, 1 },
++				.ls_det_clr	= { 0xe3d0, 2, 2, 0, 1 },
+ 				.utmi_avalid	= { 0xe2ac, 7, 7, 0, 1 },
+ 				.utmi_bvalid	= { 0xe2ac, 12, 12, 0, 1 },
+ 			},
+diff --git a/drivers/phy/rockchip/phy-rockchip-typec.c b/drivers/phy/rockchip/phy-rockchip-typec.c
+index 70a31251b202..5385bb4f0bd4 100644
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -40,6 +40,7 @@
+ #include <linux/clk-provider.h>
+ #include <linux/delay.h>
+ #include <linux/extcon.h>
++#include <linux/extcon-provider.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/kernel.h>
+@@ -1160,6 +1161,22 @@ static int rockchip_typec_phy_probe(struct platform_device *pdev)
+ 				dev_err(dev, "Invalid or missing extcon\n");
+ 			return PTR_ERR(tcphy->extcon);
+ 		}
++	} else {
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB_HOST,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_DISP_DP,
++					       EXTCON_PROP_USB_SS);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_USB_HOST,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_set_property_capability(tcphy->extcon, EXTCON_DISP_DP,
++					       EXTCON_PROP_USB_TYPEC_POLARITY);
++		extcon_sync(tcphy->extcon, EXTCON_USB);
++		extcon_sync(tcphy->extcon, EXTCON_USB_HOST);
++		extcon_sync(tcphy->extcon, EXTCON_DISP_DP);
+ 	}
+ 
+ 	pm_runtime_enable(dev);
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index 7ff507ec875a..3521d423e0dd 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -5364,6 +5364,14 @@ void regulator_unregister(struct regulator_dev *rdev)
+ EXPORT_SYMBOL_GPL(regulator_unregister);
+ 
+ #ifdef CONFIG_SUSPEND
++static inline int can_enable(struct regulator_dev *rdev) {
++	return rdev->ena_pin || rdev->desc->ops->enable;
++}
++
++static inline int can_disable(struct regulator_dev *rdev) {
++	return rdev->ena_pin || rdev->desc->ops->disable;
++}
++
+ /**
+  * regulator_suspend - prepare regulators for system wide suspend
+  * @dev: ``&struct device`` pointer that is passed to _regulator_suspend()
+@@ -5374,10 +5382,33 @@ static int regulator_suspend(struct device *dev)
+ {
+ 	struct regulator_dev *rdev = dev_to_rdev(dev);
+ 	suspend_state_t state = pm_suspend_target_state;
++	struct regulator_state *rstate;
+ 	int ret;
+ 
+ 	regulator_lock(rdev);
+ 	ret = suspend_set_state(rdev, state);
++	if (ret) {
++		goto out;
++	}
++
++	rstate = regulator_get_suspend_state(rdev, state);
++	if (rstate == NULL)
++		goto out;
++
++	if (rstate->enabled == ENABLE_IN_SUSPEND && can_enable(rdev)) {
++		if (!rdev->desc->ops->set_suspend_enable) {
++			rdev->resume_state = _regulator_is_enabled(rdev);
++			rdev_info(rdev, "Entering suspend %d, enabling forcibly, was %s\n", state, rdev->resume_state ? "on" : "off");
++			ret = _regulator_do_enable(rdev);
++		}
++	} else if (rstate->enabled == DISABLE_IN_SUSPEND && can_disable(rdev)) {
++		if (!rdev->desc->ops->set_suspend_disable) {
++			rdev->resume_state = _regulator_is_enabled(rdev);
++			rdev_info(rdev, "Entering suspend %d, disabling forcibly, was %s\n", state, rdev->resume_state ? "on" : "off");
++			ret = _regulator_do_disable(rdev);
++		}
++	}
++out:
+ 	regulator_unlock(rdev);
+ 
+ 	return ret;
+@@ -5396,10 +5427,19 @@ static int regulator_resume(struct device *dev)
+ 
+ 	regulator_lock(rdev);
+ 
+-	if (rdev->desc->ops->resume &&
+-	    (rstate->enabled == ENABLE_IN_SUSPEND ||
+-	     rstate->enabled == DISABLE_IN_SUSPEND))
+-		ret = rdev->desc->ops->resume(rdev);
++	if (rstate->enabled == ENABLE_IN_SUSPEND || rstate->enabled == DISABLE_IN_SUSPEND) {
++		if (rdev->desc->ops->resume) {
++			ret = rdev->desc->ops->resume(rdev);
++		} else if ((rstate->enabled == ENABLE_IN_SUSPEND && !rdev->desc->ops->set_suspend_enable) || 
++		           (rstate->enabled == DISABLE_IN_SUSPEND && !rdev->desc->ops->set_suspend_disable)) {
++			rdev_info(rdev, "Resuming, restoring state to %s\n", rdev->resume_state ? "on" : "off");
++			if (rdev->resume_state && can_enable(rdev)) {
++				ret = _regulator_do_enable(rdev);
++			} else if (!rdev->resume_state && can_disable(rdev)) {
++				ret = _regulator_do_disable(rdev);
++			}
++		}
++	}
+ 
+ 	regulator_unlock(rdev);
+ 
+diff --git a/drivers/soc/rockchip/Kconfig b/drivers/soc/rockchip/Kconfig
+index b71b73bf5fc5..bfadbecd0df8 100644
+--- a/drivers/soc/rockchip/Kconfig
++++ b/drivers/soc/rockchip/Kconfig
+@@ -26,4 +26,10 @@ config ROCKCHIP_PM_DOMAINS
+ 
+           If unsure, say N.
+ 
++config ROCKCHIP_SUSPEND_MODE
++	bool "Rockchip suspend mode config"
++	depends on ROCKCHIP_SIP
++	help
++	  Say Y here if you want to set the suspend mode to the ATF.
++
+ endif
+diff --git a/drivers/soc/rockchip/Makefile b/drivers/soc/rockchip/Makefile
+index afca0a4c4b72..a15c0a395a33 100644
+--- a/drivers/soc/rockchip/Makefile
++++ b/drivers/soc/rockchip/Makefile
+@@ -4,3 +4,4 @@
+ #
+ obj-$(CONFIG_ROCKCHIP_GRF) += grf.o
+ obj-$(CONFIG_ROCKCHIP_PM_DOMAINS) += pm_domains.o
++obj-$(CONFIG_ROCKCHIP_SUSPEND_MODE) += rockchip_pm_config.o
+diff --git a/drivers/tty/serdev/core.c b/drivers/tty/serdev/core.c
+index c5f0d936b003..37e45c356540 100644
+--- a/drivers/tty/serdev/core.c
++++ b/drivers/tty/serdev/core.c
+@@ -432,11 +432,22 @@ static int serdev_drv_remove(struct device *dev)
+ 	return 0;
+ }
+ 
++static void serdev_drv_shutdown(struct device *dev)
++{
++	const struct serdev_device_driver *sdrv;
++	if (dev->driver) {
++		sdrv = to_serdev_device_driver(dev->driver);
++		if (sdrv->shutdown)
++			sdrv->shutdown(to_serdev_device(dev));
++	}
++}
++
+ static struct bus_type serdev_bus_type = {
+ 	.name		= "serial",
+ 	.match		= serdev_device_match,
+ 	.probe		= serdev_drv_probe,
+ 	.remove		= serdev_drv_remove,
++	.shutdown	= serdev_drv_shutdown,
+ };
+ 
+ /**
+diff --git a/drivers/usb/storage/uas-detect.h b/drivers/usb/storage/uas-detect.h
+index 3f720faa6f97..87d6b18f4d0b 100644
+--- a/drivers/usb/storage/uas-detect.h
++++ b/drivers/usb/storage/uas-detect.h
+@@ -116,6 +116,14 @@ static int uas_use_uas_driver(struct usb_interface *intf,
+ 	if (le16_to_cpu(udev->descriptor.idVendor) == 0x0bc2)
+ 		flags |= US_FL_NO_ATA_1X;
+ 
++	/* ayufan: All Seagate disk do probably have broken UAS support */
++	if (le16_to_cpu(udev->descriptor.idVendor) == 0x0bc2)
++		flags |= US_FL_IGNORE_UAS;
++
++	/* ayufan: All WD disk do probably have broken UAS support */
++	if (le16_to_cpu(udev->descriptor.idVendor) == 0x1058)
++		flags |= US_FL_IGNORE_UAS;
++
+ 	usb_stor_adjust_quirks(udev, &flags);
+ 
+ 	if (flags & US_FL_IGNORE_UAS) {
+diff --git a/drivers/usb/storage/unusual_uas.h b/drivers/usb/storage/unusual_uas.h
+index 711ab240058c..1f39724f35f3 100644
+--- a/drivers/usb/storage/unusual_uas.h
++++ b/drivers/usb/storage/unusual_uas.h
+@@ -140,3 +140,10 @@ UNUSUAL_DEV(0x4971, 0x8024, 0x0000, 0x9999,
+ 		"External HDD",
+ 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+ 		US_FL_ALWAYS_SYNC),
++
++/* Reported-by: Thomas Kaiser and Kamil Trzciński <ayufan@ayufan.eu> */
++UNUSUAL_DEV(0x2537, 0x1066, 0x0000, 0x9999,
++		"Norelsys",
++		"NS1066X",
++		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
++		US_FL_IGNORE_UAS),
+diff --git a/drivers/usb/typec/altmodes/displayport.c b/drivers/usb/typec/altmodes/displayport.c
+index 7b20073d7fc0..c9baac68641c 100644
+--- a/drivers/usb/typec/altmodes/displayport.c
++++ b/drivers/usb/typec/altmodes/displayport.c
+@@ -9,6 +9,8 @@
+  */
+ 
+ #include <linux/delay.h>
++#include <linux/extcon.h>
++#include <linux/extcon-provider.h>
+ #include <linux/mutex.h>
+ #include <linux/module.h>
+ #include <linux/usb/pd_vdo.h>
+@@ -90,6 +92,12 @@ static int dp_altmode_configure(struct dp_altmode *dp, u8 con)
+ 		conf |= DP_CONF_UFP_U_AS_UFP_D;
+ 		pin_assign = DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo) &
+ 			     DP_CAP_UFP_D_PIN_ASSIGN(dp->port->vdo);
++
++		// Some devices have assignments reversed
++		if (!pin_assign) {
++			pin_assign = DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo) &
++			     DP_CAP_DFP_D_PIN_ASSIGN(dp->port->vdo);
++		}
+ 		break;
+ 	default:
+ 		break;
+@@ -135,15 +143,53 @@ static int dp_altmode_status_update(struct dp_altmode *dp)
+ 	return ret;
+ }
+ 
++static void dp_altmode_update_extcon(struct dp_altmode *dp, bool disconnect) {
++	const struct device *dev = &dp->port->dev;
++	struct extcon_dev* edev = NULL;
++
++	while (dev) {
++		edev = extcon_find_edev_by_node(dev->of_node);
++		if(!IS_ERR(edev)) {
++			break;
++		}
++		dev = dev->parent;
++	}
++
++	if (IS_ERR_OR_NULL(edev)) {
++		return;
++	}
++
++	if (disconnect || !dp->data.conf) {
++		extcon_set_state_sync(edev, EXTCON_DISP_DP, false);
++	} else {
++		union extcon_property_value extcon_true = { .intval = true };
++		extcon_set_state(edev, EXTCON_DISP_DP, true);
++		if (DP_CONF_GET_PIN_ASSIGN(dp->data.conf) & DP_PIN_ASSIGN_MULTI_FUNC_MASK) {
++			extcon_set_state_sync(edev, EXTCON_USB_HOST, true);
++			extcon_set_property(edev, EXTCON_DISP_DP, EXTCON_PROP_USB_SS,
++						 extcon_true);
++		} else {
++			extcon_set_state_sync(edev, EXTCON_USB_HOST, false);
++		}
++		extcon_sync(edev, EXTCON_DISP_DP);
++		extcon_set_state_sync(edev, EXTCON_USB, false);
++	}
++
++}
++
+ static int dp_altmode_configured(struct dp_altmode *dp)
+ {
+ 	int ret;
+ 
+ 	sysfs_notify(&dp->alt->dev.kobj, "displayport", "configuration");
+ 
+-	if (!dp->data.conf)
++	if (!dp->data.conf) {
++		dp_altmode_update_extcon(dp, true);
+ 		return typec_altmode_notify(dp->alt, TYPEC_STATE_USB,
+ 					    &dp->data);
++	}
++
++	dp_altmode_update_extcon(dp, false);
+ 
+ 	ret = dp_altmode_notify(dp);
+ 	if (ret)
+@@ -170,9 +216,11 @@ static int dp_altmode_configure_vdm(struct dp_altmode *dp, u32 conf)
+ 	if (ret) {
+ 		if (DP_CONF_GET_PIN_ASSIGN(dp->data.conf))
+ 			dp_altmode_notify(dp);
+-		else
++		else {
++			dp_altmode_update_extcon(dp, true);
+ 			typec_altmode_notify(dp->alt, TYPEC_STATE_USB,
+ 					     &dp->data);
++		}
+ 	}
+ 
+ 	return ret;
+@@ -211,6 +259,8 @@ static void dp_altmode_work(struct work_struct *work)
+ 	case DP_STATE_EXIT:
+ 		if (typec_altmode_exit(dp->alt))
+ 			dev_err(&dp->alt->dev, "Exit Mode Failed!\n");
++		else
++			dp_altmode_update_extcon(dp, true);
+ 		break;
+ 	default:
+ 		break;
+@@ -435,10 +485,11 @@ pin_assignment_store(struct device *dev, struct device_attribute *attr,
+ 		goto out_unlock;
+ 	}
+ 
++	// Some devices have pin assignments reversed
+ 	if (DP_CONF_CURRENTLY(dp->data.conf) == DP_CONF_DFP_D)
+-		assignments = DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo);
++		assignments = DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo) || DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo);
+ 	else
+-		assignments = DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo);
++		assignments = DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo) || DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo);
+ 
+ 	if (!(DP_CONF_GET_PIN_ASSIGN(conf) & assignments)) {
+ 		ret = -EINVAL;
+@@ -475,10 +526,11 @@ static ssize_t pin_assignment_show(struct device *dev,
+ 
+ 	cur = get_count_order(DP_CONF_GET_PIN_ASSIGN(dp->data.conf));
+ 
++	// Some devices have pin assignments reversed
+ 	if (DP_CONF_CURRENTLY(dp->data.conf) == DP_CONF_DFP_D)
+-		assignments = DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo);
++		assignments = DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo) || DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo);
+ 	else
+-		assignments = DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo);
++		assignments = DP_CAP_DFP_D_PIN_ASSIGN(dp->alt->vdo) || DP_CAP_UFP_D_PIN_ASSIGN(dp->alt->vdo);
+ 
+ 	for (i = 0; assignments; assignments >>= 1, i++) {
+ 		if (assignments & 1) {
+@@ -521,8 +573,13 @@ int dp_altmode_probe(struct typec_altmode *alt)
+ 	if (!(DP_CAP_DFP_D_PIN_ASSIGN(port->vdo) &
+ 	      DP_CAP_UFP_D_PIN_ASSIGN(alt->vdo)) &&
+ 	    !(DP_CAP_UFP_D_PIN_ASSIGN(port->vdo) &
+-	      DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo)))
++	      DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo))) {
++		dev_err(&alt->dev, "No compatible pin configuration found:"\
++			"%04lx -> %04lx, %04lx <- %04lx",
++			DP_CAP_DFP_D_PIN_ASSIGN(port->vdo), DP_CAP_UFP_D_PIN_ASSIGN(alt->vdo),
++			DP_CAP_UFP_D_PIN_ASSIGN(port->vdo), DP_CAP_DFP_D_PIN_ASSIGN(alt->vdo));
+ 		return -ENODEV;
++	}
+ 
+ 	ret = sysfs_create_group(&alt->dev.kobj, &dp_altmode_group);
+ 	if (ret)
+diff --git a/drivers/usb/typec/bus.c b/drivers/usb/typec/bus.c
+index e8ddb81cb6df..1d0265f46441 100644
+--- a/drivers/usb/typec/bus.c
++++ b/drivers/usb/typec/bus.c
+@@ -154,8 +154,14 @@ EXPORT_SYMBOL_GPL(typec_altmode_exit);
+  */
+ void typec_altmode_attention(struct typec_altmode *adev, u32 vdo)
+ {
+-	struct typec_altmode *pdev = &to_altmode(adev)->partner->adev;
++	struct typec_altmode *pdev;
++	WARN_ONCE(!adev, "typec bus attention: adev is NULL!");
++	WARN_ONCE(!to_altmode(adev)->partner, "typec bus attention: partner is NULL!");
++	if(!adev || !to_altmode(adev)->partner) {
++		return;
++	}
+ 
++	pdev = &to_altmode(adev)->partner->adev;
+ 	if (pdev->ops && pdev->ops->attention)
+ 		pdev->ops->attention(pdev, vdo);
+ }
+diff --git a/drivers/usb/typec/tcpm/tcpm.c b/drivers/usb/typec/tcpm/tcpm.c
+index a48e3f90d196..1da196509b44 100644
+--- a/drivers/usb/typec/tcpm/tcpm.c
++++ b/drivers/usb/typec/tcpm/tcpm.c
+@@ -8,6 +8,7 @@
+ #include <linux/completion.h>
+ #include <linux/debugfs.h>
+ #include <linux/device.h>
++#include <linux/extcon-provider.h>
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -330,6 +331,12 @@ struct tcpm_port {
+ 	/* port belongs to a self powered device */
+ 	bool self_powered;
+ 
++
++#ifdef CONFIG_EXTCON
++	struct extcon_dev *extcon;
++	unsigned int *extcon_cables;
++#endif
++
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *dentry;
+ 	struct mutex logbuffer_lock;	/* log buffer access lock */
+@@ -615,6 +622,33 @@ static void tcpm_debugfs_exit(const struct tcpm_port *port) { }
+ 
+ #endif
+ 
++static void tcpm_update_extcon_data(struct tcpm_port *port, bool attached) {
++#ifdef CONFIG_EXTCON
++	unsigned int *capability = port->extcon_cables;
++	if (port->data_role == TYPEC_HOST) {
++		extcon_set_state(port->extcon, EXTCON_USB, false);
++		extcon_set_state(port->extcon, EXTCON_USB_HOST, attached);
++	} else {
++		extcon_set_state(port->extcon, EXTCON_USB, true);
++		extcon_set_state(port->extcon, EXTCON_USB_HOST, attached);
++	}
++	while(*capability != EXTCON_NONE) {
++		union extcon_property_value val;
++		val.intval = true;
++		extcon_set_property(port->extcon, *capability, EXTCON_PROP_USB_SS, val);
++		val.intval = (port->polarity == TYPEC_POLARITY_CC2);
++		extcon_set_property(port->extcon, *capability,
++			EXTCON_PROP_USB_TYPEC_POLARITY, val);
++		extcon_sync(port->extcon, *capability);
++		capability++;
++	}
++	tcpm_log(port, "Extcon update (%s): %s, %s",
++		attached ? "attached" : "detached",
++		port->data_role == TYPEC_HOST ? "host" : "device",
++		port->polarity == TYPEC_POLARITY_CC1 ? "normal" : "flipped");
++#endif
++}
++
+ static int tcpm_pd_transmit(struct tcpm_port *port,
+ 			    enum tcpm_transmit_type type,
+ 			    const struct pd_message *msg)
+@@ -842,6 +876,8 @@ static int tcpm_set_roles(struct tcpm_port *port, bool attached,
+ 	typec_set_data_role(port->typec_port, data);
+ 	typec_set_pwr_role(port->typec_port, role);
+ 
++	tcpm_update_extcon_data(port, attached);
++
+ 	return 0;
+ }
+ 
+@@ -1063,7 +1099,7 @@ static void svdm_consume_modes(struct tcpm_port *port, const u32 *p, int cnt)
+ 		paltmode->mode = i;
+ 		paltmode->vdo = p[i];
+ 
+-		tcpm_log(port, " Alternate mode %d: SVID 0x%04x, VDO %d: 0x%08x",
++		tcpm_log(port, "Alternate mode %d: SVID 0x%04x, VDO %d: 0x%08x",
+ 			 pmdata->altmodes, paltmode->svid,
+ 			 paltmode->mode, paltmode->vdo);
+ 
+@@ -1180,6 +1216,7 @@ static int tcpm_pd_svdm(struct tcpm_port *port, struct typec_altmode *adev,
+ 			modep->svid_index++;
+ 			if (modep->svid_index < modep->nsvids) {
+ 				u16 svid = modep->svids[modep->svid_index];
++				tcpm_log(port, "More modes available, sending discover");
+ 				response[0] = VDO(svid, 1, CMD_DISCOVER_MODES);
+ 				rlen = 1;
+ 			} else {
+@@ -2801,6 +2838,8 @@ static void tcpm_detach(struct tcpm_port *port)
+ 		port->hard_reset_count = 0;
+ 
+ 	tcpm_reset_port(port);
++
++	tcpm_update_extcon_data(port, false);
+ }
+ 
+ static void tcpm_src_detach(struct tcpm_port *port)
+@@ -4506,6 +4545,64 @@ void tcpm_tcpc_reset(struct tcpm_port *port)
+ }
+ EXPORT_SYMBOL_GPL(tcpm_tcpc_reset);
+ 
++unsigned int default_supported_cables[] = {
++	EXTCON_NONE
++};
++
++static int tcpm_fw_get_caps_late(struct tcpm_port *port,
++			    struct fwnode_handle *fwnode)
++{
++	int ret, i;
++	ret = fwnode_property_count_u32(fwnode, "typec-altmodes");
++	if (ret > 0) {
++		u32 *props;
++		if (ret % 4) {
++			dev_err(port->dev, "Length of typec altmode array must be divisible by 4");
++			return -EINVAL;
++		}
++
++		props = devm_kzalloc(port->dev, sizeof(u32) * ret, GFP_KERNEL);
++		if (!props) {
++			dev_err(port->dev, "Failed to allocate memory for altmode properties");
++			return -ENOMEM;
++		}
++
++		if(fwnode_property_read_u32_array(fwnode, "typec-altmodes", props, ret) < 0) {
++			dev_err(port->dev, "Failed to read altmodes from port");
++			return -EINVAL;
++		}
++
++		i = 0;
++		while (ret > 0 && i < ARRAY_SIZE(port->port_altmode)) {
++			struct typec_altmode *alt;
++			struct typec_altmode_desc alt_desc = {
++				.svid = props[i * 4],
++				.mode = props[i * 4 + 1],
++				.vdo  = props[i * 4 + 2],
++				.roles = props[i * 4 + 3],
++			};
++
++
++			tcpm_log(port, "Adding altmode SVID: 0x%04x, mode: %d, vdo: %u, role: %d",
++				alt_desc.svid, alt_desc.mode, alt_desc.vdo, alt_desc.roles);
++			alt = typec_port_register_altmode(port->typec_port,
++							  &alt_desc);
++			if (IS_ERR(alt)) {
++				tcpm_log(port,
++					 "%s: failed to register port alternate mode 0x%x",
++					 dev_name(port->dev), alt_desc.svid);
++				break;
++			}
++			typec_altmode_set_drvdata(alt, port);
++			alt->ops = &tcpm_altmode_ops;
++			port->port_altmode[i] = alt;
++			i++;
++			ret -= 4;
++		}
++	}
++	return 0;
++}
++
+ static int tcpm_fw_get_caps(struct tcpm_port *port,
+ 			    struct fwnode_handle *fwnode)
+ {
+@@ -4516,6 +4613,23 @@ static int tcpm_fw_get_caps(struct tcpm_port *port,
+ 	if (!fwnode)
+ 		return -EINVAL;
+ 
++#ifdef CONFIG_EXTCON
++	ret = fwnode_property_count_u32(fwnode, "extcon-cables");
++	if (ret > 0) {
++		port->extcon_cables = devm_kzalloc(port->dev, sizeof(u32) * ret, GFP_KERNEL);
++		if (!port->extcon_cables) {
++			dev_err(port->dev, "Failed to allocate memory for extcon cable types. "\
++				"Using default tyes");
++			goto extcon_default;
++		}
++		fwnode_property_read_u32_array(fwnode, "extcon-cables", port->extcon_cables, ret);
++	} else {
++extcon_default:
++		dev_info(port->dev, "No cable types defined, using default cables");
++		port->extcon_cables = default_supported_cables;
++	}
++#endif
++
+ 	/* USB data support is optional */
+ 	ret = fwnode_property_read_string(fwnode, "data-role", &cap_str);
+ 	if (ret == 0) {
+@@ -4848,6 +4962,17 @@ struct tcpm_port *tcpm_register_port(struct device *dev, struct tcpc_dev *tcpc)
+ 		goto out_destroy_wq;
+ 
+ 	port->try_role = port->typec_caps.prefer_role;
++#ifdef CONFIG_EXTCON
++	port->extcon = devm_extcon_dev_allocate(dev, port->extcon_cables);
++	if (IS_ERR(port->extcon)) {
++		dev_err(dev, "Failed to allocate extcon device: %ld", PTR_ERR(port->extcon));
++		goto out_destroy_wq;
++	}
++	if((err = devm_extcon_dev_register(dev, port->extcon))) {
++		dev_err(dev, "Failed to register extcon device: %d", err);
++		goto out_destroy_wq;
++	}
++#endif
+ 
+ 	port->typec_caps.fwnode = tcpc->fwnode;
+ 	port->typec_caps.revision = 0x0120;	/* Type-C spec release 1.2 */
+@@ -4875,6 +5000,12 @@ struct tcpm_port *tcpm_register_port(struct device *dev, struct tcpc_dev *tcpc)
+ 		goto out_role_sw_put;
+ 	}
+ 
++	err = tcpm_fw_get_caps_late(port, tcpc->fwnode);
++	if (err < 0) {
++		dev_err(dev, "Failed to get altmodes from fwnode");
++		goto out_destroy_wq;
++	}
++
+ 	mutex_lock(&port->lock);
+ 	tcpm_init(port);
+ 	mutex_unlock(&port->lock);
+diff --git a/include/linux/extcon.h b/include/linux/extcon.h
+index fd183fb9c20f..8e4b2a111a0e 100644
+--- a/include/linux/extcon.h
++++ b/include/linux/extcon.h
+@@ -37,6 +37,7 @@
+ /* USB external connector */
+ #define EXTCON_USB		1
+ #define EXTCON_USB_HOST		2
++#define EXTCON_USB_VBUS_EN		3
+ 
+ /*
+  * Charging external connector
+diff --git a/include/linux/regulator/driver.h b/include/linux/regulator/driver.h
+index 8539f34ae42b..fbbbe53b841b 100644
+--- a/include/linux/regulator/driver.h
++++ b/include/linux/regulator/driver.h
+@@ -470,6 +470,9 @@ struct regulator_dev {
+ 
+ 	/* time when this regulator was disabled last time */
+ 	unsigned long last_off_jiffy;
++
++	/* state when resuming */
++	int resume_state;
+ };
+ 
+ struct regulator_dev *
+diff --git a/include/linux/serdev.h b/include/linux/serdev.h
+index 9f14f9c12ec4..94050561325c 100644
+--- a/include/linux/serdev.h
++++ b/include/linux/serdev.h
+@@ -63,6 +63,7 @@ struct serdev_device_driver {
+ 	struct device_driver driver;
+ 	int	(*probe)(struct serdev_device *);
+ 	void	(*remove)(struct serdev_device *);
++	void	(*shutdown)(struct serdev_device *);
+ };
+ 
+ static inline struct serdev_device_driver *to_serdev_device_driver(struct device_driver *d)
+diff --git a/include/net/bluetooth/hci.h b/include/net/bluetooth/hci.h
+index c8e67042a3b1..53f7a8518372 100644
+--- a/include/net/bluetooth/hci.h
++++ b/include/net/bluetooth/hci.h
+@@ -228,6 +228,13 @@ enum {
+ 	 */
+ 	HCI_QUIRK_VALID_LE_STATES,
+ 
++	/* When this quirk is set, max_page for local extended features
++	 * is set to 1, even if controller reports higher number. Some
++	 * controllers (e.g. RTL8723CS) report more pages, but they
++	 * don't actually support features declared there.
++	 */
++	HCI_QUIRK_BROKEN_LOCAL_EXT_FTR_MAX_PAGE,
++
+ 	/* When this quirk is set, then erroneous data reporting
+ 	 * is ignored. This is mainly due to the fact that the HCI
+ 	 * Read Default Erroneous Data Reporting command is advertised,
+diff --git a/net/bluetooth/hci_event.c b/net/bluetooth/hci_event.c
+index 4b7fc430793c..9b165c8f16de 100644
+--- a/net/bluetooth/hci_event.c
++++ b/net/bluetooth/hci_event.c
+@@ -700,7 +700,9 @@ static void hci_cc_read_local_ext_features(struct hci_dev *hdev,
+ 	if (rp->status)
+ 		return;
+ 
+-	if (hdev->max_page < rp->max_page)
++	if (!test_bit(HCI_QUIRK_BROKEN_LOCAL_EXT_FTR_MAX_PAGE,
++		      &hdev->quirks) &&
++	    hdev->max_page < rp->max_page)
+ 		hdev->max_page = rp->max_page;
+ 
+ 	if (rp->page < HCI_MAX_PAGES)
+diff --git a/sound/soc/codecs/es8316.c b/sound/soc/codecs/es8316.c
+index bd5d230c5df2..a2d8bf620b6f 100644
+--- a/sound/soc/codecs/es8316.c
++++ b/sound/soc/codecs/es8316.c
+@@ -688,7 +688,7 @@ static void es8316_disable_jack_detect(struct snd_soc_component *component)
+ 	snd_soc_component_update_bits(component, ES8316_GPIO_DEBOUNCE,
+ 				      ES8316_GPIO_ENABLE_INTERRUPT, 0);
+ 
+-	if (es8316->jack->status & SND_JACK_MICROPHONE) {
++	if (es8316->jack && (es8316->jack->status & SND_JACK_MICROPHONE)) {
+ 		es8316_disable_micbias_for_mic_gnd_short_detect(component);
+ 		snd_soc_jack_report(es8316->jack, 0, SND_JACK_BTN_0);
+ 	}
+diff --git a/sound/soc/soc-jack.c b/sound/soc/soc-jack.c
+index 0f1820f36b4d..8d9d77814f33 100644
+--- a/sound/soc/soc-jack.c
++++ b/sound/soc/soc-jack.c
+@@ -216,8 +216,6 @@ static void snd_soc_jack_gpio_detect(struct snd_soc_jack_gpio *gpio)
+ 	int report;
+ 
+ 	enable = gpiod_get_value_cansleep(gpio->desc);
+-	if (gpio->invert)
+-		enable = !enable;
+ 
+ 	if (enable)
+ 		report = gpio->report;
+@@ -346,6 +344,9 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+ 				goto undo;
+ 			}
+ 		} else {
++			int flags = GPIOF_IN;
++			if (gpios[i].invert)
++				flags |= GPIOF_ACTIVE_LOW;
+ 			/* legacy GPIO number */
+ 			if (!gpio_is_valid(gpios[i].gpio)) {
+ 				dev_err(jack->card->dev,
+@@ -355,7 +356,7 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+ 				goto undo;
+ 			}
+ 
+-			ret = gpio_request_one(gpios[i].gpio, GPIOF_IN,
++			ret = gpio_request_one(gpios[i].gpio, flags,
+ 					       gpios[i].name);
+ 			if (ret)
+ 				goto undo;
