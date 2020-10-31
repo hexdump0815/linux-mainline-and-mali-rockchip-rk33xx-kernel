@@ -8,13 +8,13 @@ INFO: based on ayufan-mainline commit 5.4: f8639cacc3989a9743ed04eb3a51eb2858174
 
 cp /compile/doc/stable-rk/config.rkc /compile/source/linux-stable-rk/.config
 cd /compile/source/linux-stable-rk
-# ayufan changes
+# ayufan changes - not needed as with v5.9.0 it was pure mainline based
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/5.4.7-diff.patch
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/5.6.0-diff.patch
-patch -p1 < /compile/doc/stable-rk/misc.rkc/5.6.13-diff.patch
-# ayufan additional files
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/5.6.13-diff.patch
+# ayufan additional files - not needed as with v5.9.0 it was pure mainline based
 #tar xzf /compile/doc/stable-rk/misc.rkc/5.4.0-rc1-added.tar.gz
-tar xzf /compile/doc/stable-rk/misc.rkc/5.6.0-added.tar.gz
+#tar xzf /compile/doc/stable-rk/misc.rkc/5.6.0-added.tar.gz
 # add new dtbs to Makefile
 patch -p1 < /compile/doc/stable-rk/misc.rkc/add-new-dtbs-to-Makefile.patch
 # copy additional dtb files
