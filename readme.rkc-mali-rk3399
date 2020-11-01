@@ -15,7 +15,7 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-mainline-mali-midgard-c
 patch -p0 < /compile/doc/stable-rk/misc.rkc/fix-rockchip-mainline-mali-midgard-compile-5.9.patch
 export ARCH=arm64
 make -C /compile/source/linux-stable-rk M=`pwd`/driver/product/kernel/drivers/gpu/arm/midgard CONFIG_MALI_MIDGARD=m CONFIG_MALI_PLATFORM_NAME=rk
-export kver=5.9.2-stb-rkc+
+export kver=5.9.3-stb-rkc+
 mkdir /lib/modules/${kver}/extra
 cp driver/product/kernel/drivers/gpu/arm/midgard/mali_kbase.ko /lib/modules/${kver}/extra
 tar czf /compile/result/stable-rk/${kver}-mali-rk3399.tar.gz /lib/modules/${kver}/extra/mali_kbase.ko
