@@ -450,7 +450,7 @@
 	cpu-supply = <&vdd_arm>;
 };
 
-/* enable the clocks higher than 1.296ghz */
+/* enable the clocks higher than 1.3ghz */
 &cpu0_opp_table {
 	opp-1392000000 {
 		opp-hz = /bits/ 64 <1392000000>;

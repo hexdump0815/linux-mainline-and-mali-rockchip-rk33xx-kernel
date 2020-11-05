@@ -436,7 +436,7 @@
 	cpu-supply = <&vdd_arm>;
 };
 
-/* adjusted opp table to use slightly (25mv) higher voltages and disable the clocks higher than 1.2ghz */
+/* adjusted opp table to use slightly (50mv) higher voltages and disable the clocks higher than 1.3ghz */
 &cpu0_opp_table {
 	opp-408000000 {
 		opp-microvolt = <975000>;
