@@ -40,6 +40,8 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/rk3328-add-dmc-driver-v5.9.patch
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/add-usb3-rk3328.patch
 # another usb3 fix - no longer needed as with 5.9.2 we are ayufan based again anyway
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/0001-usb-dwc3-disable-park-mode.patch
+# maybe alternative rk3328 usb3 driver use in armbian - not used yet
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/add-rk3328-usb3-phy-driver.patch
 
 # git pull
 export ARCH=arm64
