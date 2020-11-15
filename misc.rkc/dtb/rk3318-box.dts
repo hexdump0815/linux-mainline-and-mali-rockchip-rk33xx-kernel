@@ -361,13 +361,13 @@
 	status = "okay";
 };
 
-&spdif_out {
-	status = "okay";
-};
+// &spdif_out {
+// 	status = "okay";
+// };
 
-&spdif_sound {
-	status = "okay";
-};
+// &spdif_sound {
+// 	status = "okay";
+// };
 
 &hdmiphy {
 	status = "okay";
@@ -517,18 +517,18 @@
 	status = "okay";
 };
 
-&u3phy {
-	vbus-supply = <&vcc_host_vbus>;
-	status = "okay";
-};
+// &u3phy {
+// 	vbus-supply = <&vcc_host_vbus>;
+// 	status = "okay";
+// };
 
-&u3phy_utmi {
-	status = "okay";
-};
+// &u3phy_utmi {
+// 	status = "okay";
+// };
 
-&u3phy_pipe {
-	status = "okay";
-};
+// &u3phy_pipe {
+// 	status = "okay";
+// };
 
 &usb_host0_ehci {
 	status = "okay";
