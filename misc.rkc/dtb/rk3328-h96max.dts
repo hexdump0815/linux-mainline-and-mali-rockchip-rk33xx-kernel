@@ -459,11 +459,29 @@
 		clock-latency-ns = <40000>;
 		status = "okay";
 	};
+	opp-1416000000 {
+		opp-hz = /bits/ 64 <1416000000>;
+		opp-microvolt = <1450000>;
+		clock-latency-ns = <40000>;
+		status = "disabled";
+	};
+	opp-1488000000 {
+		opp-hz = /bits/ 64 <1488000000>;
+		opp-microvolt = <1450000>;
+		clock-latency-ns = <40000>;
+		status = "okay";
+	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "okay";
+		status = "disabled";
+	};
+	opp-1608000000 {
+		opp-hz = /bits/ 64 <1608000000>;
+		opp-microvolt = <1450000>;
+		clock-latency-ns = <40000>;
+		status = "disabled";
 	};
 };
 
