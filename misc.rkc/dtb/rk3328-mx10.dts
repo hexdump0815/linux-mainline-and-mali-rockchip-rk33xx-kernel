@@ -15,6 +15,7 @@
 		stdout-path = "serial2:1500000n8";
 	};
 
+/* the ddr_timing is only used with legacy atf - mainline atf does not yet support dmc */
 	ddr_timing {
 		compatible = "rockchip,ddr-timing";
 		ddr3_speed_bin = <0x15>;

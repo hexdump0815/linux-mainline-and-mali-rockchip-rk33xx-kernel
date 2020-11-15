@@ -30,6 +30,7 @@
 		};
 	};
 
+/* the ddr_timing is only used with legacy atf - mainline atf does not yet support dmc */
 	ddr_timing {
 		cs1_dq11_tx_de-skew = <0x7>;
 		cs1_dq30_rx_de-skew = <0x7>;
