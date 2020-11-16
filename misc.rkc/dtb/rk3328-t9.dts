@@ -491,10 +491,12 @@
 };
 
 &emmc {
-	max-frequency = <200000000>;
+// 	max-frequency = <200000000>;
 	bus-width = <8>;
 	cap-mmc-highspeed;
-	mmc-hs200-1_8v;
+//	mmc-hs200-1_8v;
+	mmc-ddr-1_8v;
+	disable-wp;
 	non-removable;
 	num-slots = <1>;
 	pinctrl-names = "default";
@@ -743,6 +745,7 @@
 	cd-gpios = <&gpio1 RK_PA5 GPIO_ACTIVE_LOW>;
 	disable-wp;
 	max-frequency = <100000000>;
+	card-detect-delay = <800>;
 	num-slots = <1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_dectn &sdmmc0_bus4>;
