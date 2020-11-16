@@ -146,7 +146,7 @@
 		pwms = <&pwm0 0 5000 1>;
 		regulator-name = "vdd_arm";
 		regulator-min-microvolt = <950000>;
-		regulator-max-microvolt = <1400000>;
+		regulator-max-microvolt = <1475000>;
 		regulator-ramp-delay = <12500>;
 		regulator-settling-time-up-us = <250>;
 		regulator-always-on;
