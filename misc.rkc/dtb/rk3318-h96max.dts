@@ -416,7 +416,7 @@
 		compatible = "pwm-regulator";
 		pwms = <&pwm0 0 5000 1>;
 		regulator-name = "vcc_arm";
-		regulator-min-microvolt = <900000>;
+		regulator-min-microvolt = <850000>;
 		regulator-max-microvolt = <1475000>;
 		regulator-always-on;
 		regulator-boot-on;
@@ -451,50 +451,61 @@
 	cpu-supply = <&vdd_arm>;
 };
 
-/* adjusted opp table to disable the clocks equal or higher than 1.2ghz
-   and add a 1.1ghz clock instead for the rk3318 */
+/* adjusted opp table to use slightly (75mv) lower voltages to keep things cooler */
 &cpu0_opp_table {
+	opp-408000000 {
+		opp-microvolt = <875000>;
+	};
+	opp-600000000 {
+		opp-microvolt = <875000>;
+	};
+	opp-816000000 {
+		opp-microvolt = <925000>;
+	};
+	opp-1008000000 {
+		opp-microvolt = <1025000>;
+	};
 	opp-1104000000 {
 		opp-hz = /bits/ 64 <1104000000>;
-		opp-microvolt = <1225000>;
+		opp-microvolt = <1150000>;
 		clock-latency-ns = <40000>;
 		status = "okay";
 	};
 	opp-1200000000 {
-		opp-microvolt = <1225000>;
+		opp-microvolt = <1150000>;
 		status = "disabled";
 	};
 	opp-1296000000 {
-		opp-microvolt = <1300000>;
+		opp-microvolt = <1225000>;
 		status = "disabled";
 	};
 	opp-1392000000 {
 		opp-hz = /bits/ 64 <1392000000>;
-		opp-microvolt = <1350000>;
+		opp-microvolt = <1275000>;
 		clock-latency-ns = <40000>;
 		status = "disabled";
 	};
 	opp-1416000000 {
 		opp-hz = /bits/ 64 <1416000000>;
-		opp-microvolt = <1450000>;
+		opp-microvolt = <1375000>;
 		clock-latency-ns = <40000>;
 		status = "disabled";
 	};
 	opp-1488000000 {
 		opp-hz = /bits/ 64 <1488000000>;
-		opp-microvolt = <1450000>;
+		opp-microvolt = <1375000>;
 		clock-latency-ns = <40000>;
 		status = "disabled";
 	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
-		opp-microvolt = <1450000>;
+		opp-microvolt = <1375000>;
 		clock-latency-ns = <40000>;
 		status = "disabled";
 	};
 	opp-1608000000 {
 		opp-hz = /bits/ 64 <1608000000>;
-		opp-microvolt = <1450000>;
+		opp-microvolt = <1375000>;
 		clock-latency-ns = <40000>;
 		status = "disabled";
 	};
