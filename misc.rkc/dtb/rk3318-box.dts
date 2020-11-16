@@ -83,35 +83,59 @@
 		vin-supply = <&vcc_io>;
 	};
 
-	/*
-	 * USB3 vbus
-	 */
-	vcc_host_vbus: vcc-host-vbus {
+//	/*
+//	 * USB3 vbus
+//	 */
+//	vcc_host_vbus: vcc-host-vbus {
+//		compatible = "regulator-fixed";
+//		enable-active-high;
+//		gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+//		pinctrl-names = "default";
+//		pinctrl-0 = <&usb30_host_drv>;
+//		regulator-name = "vcc_host_vbus";
+//		regulator-always-on;
+//		regulator-min-microvolt = <5000000>;
+//		regulator-max-microvolt = <5000000>;
+//		vin-supply = <&vcc_sys>;
+//	};
+
+//	/*
+//	 * USB2 OTG vbus
+//	 */
+//	vcc_otg_vbus: vcc-otg-vbus {
+//		compatible = "regulator-fixed";
+//		enable-active-high;
+//		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
+//		pinctrl-names = "default";
+//		pinctrl-0 = <&usb20_host_drv>;
+//		regulator-name = "vcc_otg_vbus";
+//		regulator-always-on;
+//		regulator-min-microvolt = <5000000>;
+//		regulator-max-microvolt = <5000000>;
+//		vin-supply = <&vcc_sys>;
+//	};
+
+	vcc_host_5v: vcc-host-5v-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb30_host_drv>;
-		regulator-name = "vcc_host_vbus";
+		regulator-name = "vcc_host_5v";
 		regulator-always-on;
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
 		vin-supply = <&vcc_sys>;
 	};
 
-	/*
-	 * USB2 OTG vbus
-	 */
-	vcc_otg_vbus: vcc-otg-vbus {
+	vcc_host1_5v: vcc_otg_5v: vcc-host1-5v-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb20_host_drv>;
-		regulator-name = "vcc_otg_vbus";
+		regulator-name = "vcc_host1_5v";
 		regulator-always-on;
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
 		vin-supply = <&vcc_sys>;
 	};
 
@@ -502,15 +526,27 @@
 
 &u2phy {
 	status = "okay";
-
-	u2phy_host: host-port {
-		status = "okay";
-	};
-
-	u2phy_otg: otg-port {
-		status = "okay";
-	};
 };
+
+&u2phy_host {
+	status = "okay";
+};
+
+&u2phy_otg {
+	status = "okay";
+};
+
+// &u2phy {
+// 	status = "okay";
+
+// 	u2phy_host: host-port {
+// 		status = "okay";
+// 	};
+
+// 	u2phy_otg: otg-port {
+// 		status = "okay";
+// 	};
+// };
 
 &usb20_otg {
 	dr_mode = "host";
