@@ -656,7 +656,7 @@
 		opp-hz = /bits/ 64 <1104000000>;
 		opp-microvolt = <1250000>;
 		clock-latency-ns = <40000>;
-		status = "okay"
+		status = "okay";
 	};
 	opp-1200000000 {
 		opp-microvolt = <1250000>;
