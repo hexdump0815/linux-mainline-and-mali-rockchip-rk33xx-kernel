@@ -483,7 +483,7 @@
 };
 
 &threshold {
-	temperature = <80000>; /* millicelsius */
+	temperature = <85000>; /* millicelsius */
 };
 
 &target {
@@ -491,7 +491,7 @@
 };
 
 &soc_crit {
-	temperature = <100000>; /* millicelsius */
+	temperature = <105000>; /* millicelsius */
 };
 
 &tsadc {
