@@ -6,9 +6,9 @@ index 1f18a9392d15..f09882e7c262 100644
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-evb.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock64.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-roc-cc.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3318-box.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3318-box-25mv.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3318-box-50mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-box.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-box-25mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-box-50mv.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3318-h96max.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-h96max.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-mx10.dtb
