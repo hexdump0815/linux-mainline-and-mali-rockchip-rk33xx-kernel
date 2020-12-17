@@ -2,6 +2,7 @@
 # - /compile/doc/stable-rk - the files in this dir
 # - /compile/source/linux-stable-rk - the kernel sources checked out from gitrepo
 # - /compile/result/stable-rk - the resulting kernel, modules etc. tar.gz files
+# name: stb-rkc
 
 # patches:
 # add new dtbs to Makefile
