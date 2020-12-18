@@ -33,12 +33,20 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-mali-gpu-opp-table.pa
 # add some more hdmi mode timings
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/general-add-pll-hdmi-timings.patch
 
+# add the rtl8723cs sdio wifi driver
+cd drivers/staging
+git clone https://github.com/Icenowy/rtl8723cs.git
+cd ../..
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver.patch
+
 cp /compile/doc/stable-rk/config.rkc /compile/source/linux-stable-rk/.config
 cd /compile/source/linux-stable-rk
 
 # git pull
 export ARCH=arm64
-# make defconfig + fix options - see misc.rkc/options
+# make defconfig
+# /compile/doc/stable-rk/misc.rkc/options/enable-docker-options.sh
+# /compile/doc/stable-rk/misc.rkc/options/enable-additional-options.sh
 make oldconfig
 make -j 4 Image dtbs modules
 cd tools/perf
@@ -57,10 +65,7 @@ cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
 cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
 # make headers_install INSTALL_HDR_PATH=/usr
 cp -v .config /boot/config-${kver}
-# for rpi
 cp -v arch/arm64/boot/Image /boot/Image-${kver}
-# for s90
-mkimage -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -n linux-${kver} -d arch/arm64/boot/Image /boot/uImage-${kver}
 mkdir /boot/dtb-${kver}
 cp -v arch/arm64/boot/dts/rockchip/rk3318-*.dtb /boot/dtb-${kver}/
 cp -v arch/arm64/boot/dts/rockchip/rk3328-*.dtb /boot/dtb-${kver}/
@@ -69,7 +74,6 @@ cp -v arch/arm64/boot/dts/rockchip/rk3399-*.dtb /boot/dtb-${kver}/
 cp -v System.map /boot/System.map-${kver}
 cd /boot
 update-initramfs -c -k ${kver}
-mkimage -A arm64 -O linux -T ramdisk -a 0x0 -e 0x0 -n initrd.img-${kver} -d initrd.img-${kver} uInitrd-${kver}
 tar cvzf /compile/source/linux-stable-rk/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
 cp -v /compile/doc/stable-rk/config.rkc /compile/doc/stable-rk/config.rkc.old
 cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc
