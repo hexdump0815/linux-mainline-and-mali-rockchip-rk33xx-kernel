@@ -651,8 +651,15 @@
 	opp-1008000000 {
 		opp-microvolt = <1150000>;
 	};
+	opp-1104000000 {
+		opp-hz = /bits/ 64 <1104000000>;
+		opp-microvolt = <1275000>;
+		clock-latency-ns = <40000>;
+		status = "disabled";
+	};
 	opp-1200000000 {
 		opp-microvolt = <1275000>;
+		status = "okay";
 	};
 	opp-1296000000 {
 		opp-microvolt = <1375000>;
