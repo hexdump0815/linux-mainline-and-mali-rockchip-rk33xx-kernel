@@ -72,6 +72,22 @@ cp -v arch/arm64/boot/dts/rockchip/rk3328-*.dtb /boot/dtb-${kver}/
 cp -v arch/arm64/boot/dts/rockchip/rk3368-*.dtb /boot/dtb-${kver}/
 cp -v arch/arm64/boot/dts/rockchip/rk3399-*.dtb /boot/dtb-${kver}/
 cp -v System.map /boot/System.map-${kver}
+# start chromebook special - required: apt-get install vboot-kernel-utils
+cp /compile/doc/stable-rk/misc.rkc/misc/bob-kernel.its kernel.its
+cp /compile/doc/stable-rk/misc.rkc/misc/bob-cmdline cmdline
+mkimage -D "-I dts -O dtb -p 2048" -f kernel.its vmlinux.uimg || true
+dd if=/dev/zero of=bootloader.bin bs=512 count=1
+vbutil_kernel --pack vmlinux.kpart --version 1 --vmlinuz vmlinux.uimg --arch aarch64 --keyblock /usr/share/vboot/devkeys/kernel.keyblock --signprivate /usr/share/vboot/devkeys/kernel_data_key.vbprivk --config cmdline --bootloader bootloader.bin
+cp -v vmlinux.kpart /boot/vmlinux.kpart-bob-${kver}
+rm -f kernel.its cmdline vmlinux.uimg bootloader.bin vmlinux.kpart
+cp /compile/doc/stable-rk/misc.rkc/misc/kevin-kernel.its kernel.its
+cp /compile/doc/stable-rk/misc.rkc/misc/kevin-cmdline cmdline
+mkimage -D "-I dts -O dtb -p 2048" -f kernel.its vmlinux.uimg || true
+dd if=/dev/zero of=bootloader.bin bs=512 count=1
+vbutil_kernel --pack vmlinux.kpart --version 1 --vmlinuz vmlinux.uimg --arch aarch64 --keyblock /usr/share/vboot/devkeys/kernel.keyblock --signprivate /usr/share/vboot/devkeys/kernel_data_key.vbprivk --config cmdline --bootloader bootloader.bin
+cp -v vmlinux.kpart /boot/vmlinux.kpart-kevin-${kver}
+rm -f kernel.its cmdline vmlinux.uimg bootloader.bin vmlinux.kpart
+# end chromebook special
 cd /boot
 update-initramfs -c -k ${kver}
 tar cvzf /compile/source/linux-stable-rk/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
