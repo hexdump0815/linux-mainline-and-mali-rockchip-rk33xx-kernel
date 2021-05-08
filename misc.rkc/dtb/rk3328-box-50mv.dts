@@ -9,7 +9,7 @@
 #include "rk3328.dtsi"
 
 / {
-	model = "Rockchip RK3318 BOX";
+	model = "Rockchip RK3328 BOX";
 	compatible = "rockchip,rk3318-box", "rockchip,rk3328-box", "rockchip,rk3328";
 
 	chosen {
