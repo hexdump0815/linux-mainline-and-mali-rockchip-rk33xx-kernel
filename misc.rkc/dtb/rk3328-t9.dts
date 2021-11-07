@@ -841,10 +841,10 @@
 	status = "okay";
 };
 
-&usbdrd_dwc3 {
-	dr_mode = "host";
-	status = "okay";
-};
+//&usbdrd_dwc3 {
+//	dr_mode = "host";
+//	status = "okay";
+//};
 
 //&spi0 {
 // 	status = "okay";

@@ -2,7 +2,10 @@
 # - /compile/doc/stable-rk - the files in this dir
 # - /compile/source/linux-stable-rk - the kernel sources checked out from gitrepo
 # - /compile/result/stable-rk - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
 # name: stb-rkc
+
+cd /compile/source/linux-stable-rk
 
 # patches:
 # add new dtbs to Makefile
@@ -10,7 +13,7 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-new-dtbs-to-Makefile.pat
 # copy additional dtb files
 cp -i /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 # add some mali stuff for rk3328
-patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-mali-pd-and-clk.patch
+patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-mali-pd-and-clk-v5.15.patch
 # raise the temperatures a bit
 patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-higher-temps.patch
 # enable gpu for rock64
@@ -20,10 +23,10 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/add-sdmmc-ext-for-h96max-rk3
 # dmc memory freq support for rk3328 - taken from armbian patches
 # disabled for now as it does not compile - does not work for mainline atf yet anyway
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver-v5.9.patch
-# add usb3 support for rk3328 - no longer needed as with 5.9.2 we are ayufan based again anyway
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-usb3-rk3328.patch
-# another usb3 fix - no longer needed as with 5.9.2 we are ayufan based again anyway
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/0001-usb-dwc3-disable-park-mode.patch
+# add usb3 support for rk3328 - no longer needed - looks like usb3 stuff is already in now
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-usb3-rk3328.patch
+# another usb3 fix - no longer needed - looks like usb3 stuff is already in now
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/0001-usb-dwc3-disable-park-mode.patch
 # maybe alternative rk3328 usb3 driver use in armbian - not used yet
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rk3328-usb3-phy-driver.patch
 # fix mali node
@@ -36,17 +39,16 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/general-add-pll-hdmi-timings
 # add the rtl8723cs sdio wifi driver
 cd drivers/staging
 git clone https://github.com/Icenowy/rtl8723cs.git
-cd ../..
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver.patch
-
-cp /compile/doc/stable-rk/config.rkc /compile/source/linux-stable-rk/.config
-cd /compile/source/linux-stable-rk
+cd rtl8723cs
+git checkout new-driver-by-megous
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/fix-rtl8723cs-driver-v5.15.patch
+cd ../../..
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver-v5.15.patch
 
 export ARCH=arm64
-make defconfig
-/compile/doc/stable-rk/misc.rkc/options/enable-docker-options.sh
-/compile/doc/stable-rk/misc.rkc/options/enable-additional-options.sh
-make oldconfig
+scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-rk/misc.rkc/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-rk/misc.rkc/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/stable-rk/misc.rkc/options/kernel-config-options.version
+make olddefconfig
 make -j 4 Image dtbs modules
 cd tools/perf
 make
