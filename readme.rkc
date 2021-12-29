@@ -1,11 +1,11 @@
 # directories:
 # - /compile/doc/stable-rk - the files in this dir
-# - /compile/source/linux-stable-rk - the kernel sources checked out from gitrepo
+# - /compile/source/linux-stable-rkc - the kernel sources checked out from gitrepo
 # - /compile/result/stable-rk - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
 # name: stb-rkc
 
-cd /compile/source/linux-stable-rk
+cd /compile/source/linux-stable-rkc
 
 # patches:
 # add new dtbs to Makefile
@@ -29,8 +29,8 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/add-sdmmc-ext-for-h96max-rk3
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/0001-usb-dwc3-disable-park-mode.patch
 # maybe alternative rk3328 usb3 driver use in armbian - not used yet
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rk3328-usb3-phy-driver.patch
-# fix mali node
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-fix-mali-node.patch
+# fix mali node - no longer required with v5.15.12
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-fix-mali-node.patch
 # rk3328 mali gpu opp table
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-mali-gpu-opp-table.patch
 # add some more hdmi mode timings
@@ -85,11 +85,11 @@ rm -f Image Image.lz4 cmdline bootloader.bin kernel.itb vmlinux.kpart
 # end chromebook special
 cd /boot
 update-initramfs -c -k ${kver}
-tar cvzf /compile/source/linux-stable-rk/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
+tar cvzf /compile/source/linux-stable-rkc/${kver}.tar.gz /boot/*-${kver} /lib/modules/${kver}
 cp -v /compile/doc/stable-rk/config.rkc /compile/doc/stable-rk/config.rkc.old
-cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc
-cp -v /compile/source/linux-stable-rk/.config /compile/doc/stable-rk/config.rkc-${kver}
-cp -v /compile/source/linux-stable-rk/*.tar.gz /compile/result/stable-rk
+cp -v /compile/source/linux-stable-rkc/.config /compile/doc/stable-rk/config.rkc
+cp -v /compile/source/linux-stable-rkc/.config /compile/doc/stable-rk/config.rkc-${kver}
+cp -v /compile/source/linux-stable-rkc/*.tar.gz /compile/result/stable-rk
 
 
 # h96max h2: cat extlinux.conf
