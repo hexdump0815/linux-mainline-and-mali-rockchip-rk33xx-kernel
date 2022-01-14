@@ -1,5 +1,16 @@
 --- arch/arm64/boot/dts/rockchip/rk3328.dtsi.org	2020-05-19 23:48:10.865880665 +0200
 +++ arch/arm64/boot/dts/rockchip/rk3328.dtsi	2020-05-19 23:53:01.105831238 +0200
+@@ -319,6 +339,10 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+
++			power-domain@RK3328_PD_GPU {
++				reg = <RK3328_PD_GPU>;
++				clocks = <&cru ACLK_GPU>;
++			};
+ 			power-domain@RK3328_PD_HEVC {
+ 				reg = <RK3328_PD_HEVC>;
+ 			};
 @@ -624,6 +628,7 @@
  				  "ppmmu1";
  		clocks = <&cru ACLK_GPU>, <&cru ACLK_GPU>;
