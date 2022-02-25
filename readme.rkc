@@ -25,8 +25,10 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/add-sdmmc-ext-for-h96max-rk3
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver-v5.9.patch
 # add usb3 support for rk3328 - no longer needed - looks like usb3 stuff is already in now
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-usb3-rk3328.patch
-# another usb3 fix - no longer needed - looks like usb3 stuff is already in now
+# another usb3 fix - no longer needed - replaced by the below patch
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/0001-usb-dwc3-disable-park-mode.patch
+# disable parkmode for usb dwc3 and enable usb host mode for usb3 by default
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/usb-dwc3-disable-park-mode-enable-host-mode-v5.15.patch
 # maybe alternative rk3328 usb3 driver use in armbian - not used yet
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rk3328-usb3-phy-driver.patch
 # fix mali node - no longer required with v5.15.12
