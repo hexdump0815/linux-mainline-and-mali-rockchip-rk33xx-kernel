@@ -41,6 +41,8 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/general-add-pll-hdmi-timings
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane.patch
 # add gamma drm support for rk3399
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-add-drm-gamma-support.patch
+# slow down mmc speeds on the pinebook pro to avoid data corruption
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-pinebook-pro-slower-mmc.patch
 
 # add the rtl8723cs sdio wifi driver
 cd drivers/staging
