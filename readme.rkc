@@ -3,13 +3,14 @@
 # - /compile/source/linux-stable-rkc - the kernel sources checked out from gitrepo
 # - /compile/result/stable-rk - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# - /compile/doc/kernel-extra-patches - https://github.com/hexdump0815/kernel-extra-patches
 # name: stb-rkc
 
 cd /compile/source/linux-stable-rkc
 
 # patches:
 # add new dtbs to Makefile
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-new-dtbs-to-Makefile.patch
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-new-dtbs-to-Makefile-v5.18.patch
 # copy additional dtb files
 cp -i /compile/doc/stable-rk/misc.rkc/dtb/*.dts arch/arm64/boot/dts/rockchip
 # add some mali stuff for rk3328
@@ -46,12 +47,15 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.pa
 
 # add the rtl8723cs sdio wifi driver
 cd drivers/staging
-git clone https://github.com/Icenowy/rtl8723cs.git
-cd rtl8723cs
-git checkout new-driver-by-megous
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/fix-rtl8723cs-driver-v5.15.patch
-cd ../../..
+git clone https://github.com/hexdump0815/rtl8723cs.git
+cd ../..
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver-v5.15.patch
+
+# apply the multi gen lru kernel extra patches
+for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v11/*.diff
+  echo === $i
+  patch -p1 < $i
+done
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-rk/misc.rkc/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-rk/misc.rkc/options/additional-options-special.cfg
