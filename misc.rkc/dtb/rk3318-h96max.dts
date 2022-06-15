@@ -18,6 +18,7 @@
 /* seems to be required to not touch the trust area - see:
    - https://forum.manjaro.org/t/rockpro64-kernel-panics-caused-by-firmware/117900
    - https://lore.kernel.org/linux-arm-kernel/006d3ee0-2711-1b4e-d8cf-6a226fcad0e4@arm.com/
+   this section can be removed if a mainline u-boot without trustzone is used
 */
 	reserved-memory {
 		#address-cells = <2>;

@@ -15,6 +15,22 @@
 		stdout-path = "serial2:1500000n8";
 	};
 
+/* seems to be required to not touch the trust area - see:
+   - https://forum.manjaro.org/t/rockpro64-kernel-panics-caused-by-firmware/117900
+   - https://lore.kernel.org/linux-arm-kernel/006d3ee0-2711-1b4e-d8cf-6a226fcad0e4@arm.com/
+   this section can be removed if a mainline u-boot without trustzone is used
+*/
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		tee@0x8400000 {
+			reg = <0x0 0x8400000 0x0 0x2400000>;
+			no-map;
+		};
+	};
+
 /* the ddr_timing is only used with legacy atf - mainline atf does not yet support dmc */
 	ddr_timing {
 		compatible = "rockchip,ddr-timing";
