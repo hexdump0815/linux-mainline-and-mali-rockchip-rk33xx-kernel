@@ -49,10 +49,10 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.pa
 cd drivers/staging
 git clone https://github.com/hexdump0815/rtl8723cs.git
 cd ../..
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver-v5.15.patch
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver-v5.19.patch
 
 # apply the multi gen lru kernel extra patches
-for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v11/*.diff; do
+for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v13/*.diff; do
   echo === $i
   patch -p1 < $i
 done

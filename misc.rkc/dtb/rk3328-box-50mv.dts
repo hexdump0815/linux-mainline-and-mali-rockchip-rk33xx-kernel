@@ -492,11 +492,11 @@
 	status = "okay";
 	vcodec-supply = <&vdd_logic>;
 };
-*/
 
 &rkvdec_mmu {
 	status = "okay";
 };
+*/
 
 &threshold {
 	temperature = <85000>; /* millicelsius */
