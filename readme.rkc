@@ -52,9 +52,11 @@ cd ../..
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-rtl8723cs-driver-v5.19.patch
 # some fixes for this driver required for v5.19.2+
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v5.19.2-fixes.patch
+# some fixes for this driver required for v6.0+
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v6.0-fixes.patch
 
 # apply the multi gen lru kernel extra patches
-for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v13/*.diff; do
+for i in /compile/doc/kernel-extra-patches/multi-gen-lru/v15/*.diff; do
   echo === $i
   patch -p1 < $i
 done
