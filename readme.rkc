@@ -91,33 +91,3 @@ cp -v /compile/doc/stable-rk/config.rkc /compile/doc/stable-rk/config.rkc.old
 cp -v /compile/source/linux-stable-rkc/.config /compile/doc/stable-rk/config.rkc
 cp -v /compile/source/linux-stable-rkc/.config /compile/doc/stable-rk/config.rkc-${kver}
 cp -v /compile/source/linux-stable-rkc/*.tar.gz /compile/result/stable-rk
-
-
-# h96max h2: cat extlinux.conf
-TIMEOUT 100
-DEFAULT v5613
- 
-MENU TITLE h96max rk3328 boot options
-
-# other possible options: no_console_suspend=1 consoleblank=0
- 
-LABEL v5613
-      MENU LABEL v5.6.13 kernel root sda3 usb
-      LINUX ../Image-5.6.13-stb-rkc+
-      INITRD ../initrd.img-5.6.13-stb-rkc+
-      FDT ../dtb-5.6.13-stb-rkc+/rk3328-evb.dtb
-      APPEND console=tty0 console=ttyS2,1500000n8 root=/dev/sda3 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 threadirqs noresume
-
-
-# rockpi4b: cat extlinux.conf
-TIMEOUT 100
-DEFAULT v5613
-
-MENU TITLE rock pi 4b boot options
-
-LABEL v5613
-      MENU LABEL v5.6.13 kernel
-      LINUX ../Image-5.6.13-stb-rkc+
-      INITRD ../initrd.img-5.6.13-stb-rkc+
-      FDT ../dtb-5.6.13-stb-rkc+/rk3399-rock-pi-4.dtb
-      APPEND console=ttyS2,1500000n8 console=tty0 root=/dev/mmcblk1p3 rootwait ro fsck.fix=yes fsck.repair=yes net.ifnames=0 ipv6.disable=1 noresume
