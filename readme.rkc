@@ -3,7 +3,7 @@
 # - /compile/source/linux-stable-rkc - the kernel sources checked out from gitrepo
 # - /compile/result/stable-rk - the resulting kernel, modules etc. tar.gz files
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
-# name: stb-rkc - rockchip
+# name: stb-rkc - rockchip rk3328 and rk3399
 
 cd /compile/source/linux-stable-rkc
 
