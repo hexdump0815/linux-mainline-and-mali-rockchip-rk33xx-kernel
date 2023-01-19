@@ -12,7 +12,7 @@ cd /compile/source/linux-stable-r56
 
 # patches:
 # add rk356x from minimyth2
-for i in /compile/doc/stable-rk/misc.r56/patches/*.patch; do
+for i in /compile/doc/stable-rk/misc.r56/patches/minimyth2/*.patch; do
   echo === $i
   patch -p1 < $i
 done
