@@ -55,6 +55,10 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v5.19.2-fixes.patc
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v6.0-fixes.patch
 # some fixes for this driver required for v6.1+
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v6.1-fixes.patch
+# some fixes for this driver required for v6.4+
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rtl8723cs-v6.4-fixes.patch
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/fix-kernel-version-number.patch
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-rk/misc.rkc/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-rk/misc.rkc/options/additional-options-special.cfg
