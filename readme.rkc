@@ -23,6 +23,8 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/add-sdmmc-ext-for-h96max-rk3
 # dmc memory freq support for rk3328 - taken from armbian patches
 # disabled for now as it does not compile - does not work for mainline atf yet anyway
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver-v5.9.patch
+# the armbian v6.1 patch seem to work
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver.patch
 # add usb3 support for rk3328 - no longer needed - looks like usb3 stuff is already in now
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/add-usb3-rk3328.patch
 # another usb3 fix - no longer needed - replaced by the below patch
