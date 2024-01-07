@@ -645,14 +645,6 @@
 	status = "okay";
 };
 
-// &cpu0_opp_table {
-
-// 	opp-1512000000 {
-// 		status = "disabled";
-// 	};
-
-// };
-
 /* adjusted opp table to use slightly (50mv) higher voltages and disable the clocks higher than 1.3ghz */
 &cpu0_opp_table {
 	opp-408000000 {
@@ -671,7 +663,8 @@
 		opp-hz = /bits/ 64 <1104000000>;
 		opp-microvolt = <1275000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1200000000 {
 		opp-microvolt = <1275000>;
@@ -685,31 +678,36 @@
 		opp-hz = /bits/ 64 <1392000000>;
 		opp-microvolt = <1500000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1416000000 {
 		opp-hz = /bits/ 64 <1416000000>;
 		opp-microvolt = <1500000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1488000000 {
 		opp-hz = /bits/ 64 <1488000000>;
 		opp-microvolt = <1500000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
 		opp-microvolt = <1500000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1608000000 {
 		opp-hz = /bits/ 64 <1608000000>;
 		opp-microvolt = <1500000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 };
 

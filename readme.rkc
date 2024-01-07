@@ -5,7 +5,8 @@
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
 # name: stb-rkc - rockchip rk3328 and rk3399
 
-# INFO: required: apt-get -y install libelf-dev libtraceevent-dev
+# it looks like for newer kernel versions like v6.5 the following packages have to be
+# installed in order to get the tool compiled well: libelf-dev python3-dev libtraceevent-dev
 
 cd /compile/source/linux-stable-rkc
 
@@ -23,7 +24,7 @@ patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-rock64-enable-gpu-and
 # add sdmmc_ext for h96max rk3328 - as v5.9.2 is based on ayufan tree we can use the old patch again
 patch -p0 < /compile/doc/stable-rk/misc.rkc/patches/add-sdmmc-ext-for-h96max-rk3328-v5.9.patch
 # dmc memory freq support for rk3328 - taken from armbian patches
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver.patch
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-add-dmc-driver-v6.6.9.patch
 # disable parkmode for usb dwc3 and enable usb host mode for usb3 by default
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/usb-dwc3-disable-park-mode-enable-host-mode-v5.15.patch
 # rk3328 mali gpu opp table
@@ -31,7 +32,7 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-mali-gpu-opp-table.pa
 # add some more hdmi mode timings
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/general-add-pll-hdmi-timings-v6.6.patch
 # add a hw cursor plane
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane.patch
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane-v6.6.9.patch
 # get rid of mmc errors, emmc/sd disk corruption and wifi problems
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.patch
 # fix kernel version number: + instead of -dirty at the end

@@ -463,41 +463,48 @@
 	};
 	opp-1200000000 {
 		opp-microvolt = <1225000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1296000000 {
 		opp-microvolt = <1300000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1392000000 {
 		opp-hz = /bits/ 64 <1392000000>;
 		opp-microvolt = <1350000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1416000000 {
 		opp-hz = /bits/ 64 <1416000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1488000000 {
 		opp-hz = /bits/ 64 <1488000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1608000000 {
 		opp-hz = /bits/ 64 <1608000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 };
 

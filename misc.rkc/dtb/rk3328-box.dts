@@ -645,14 +645,6 @@
 	status = "okay";
 };
 
-// &cpu0_opp_table {
-
-// 	opp-1512000000 {
-// 		status = "disabled";
-// 	};
-
-// };
-
 /* adjusted opp table with disabled clocks higher than 1.3ghz
    and add a potential 1.1ghz clock for the rk3318 */
 &cpu0_opp_table {
@@ -660,7 +652,8 @@
 		opp-hz = /bits/ 64 <1104000000>;
 		opp-microvolt = <1225000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1200000000 {
 		status = "okay";
@@ -672,31 +665,36 @@
 		opp-hz = /bits/ 64 <1392000000>;
 		opp-microvolt = <1350000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1416000000 {
 		opp-hz = /bits/ 64 <1416000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1488000000 {
 		opp-hz = /bits/ 64 <1488000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1608000000 {
 		opp-hz = /bits/ 64 <1608000000>;
 		opp-microvolt = <1450000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 };
 

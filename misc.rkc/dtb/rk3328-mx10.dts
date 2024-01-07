@@ -456,31 +456,36 @@
 		opp-hz = /bits/ 64 <1392000000>;
 		opp-microvolt = <1375000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1416000000 {
 		opp-hz = /bits/ 64 <1416000000>;
 		opp-microvolt = <1475000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1488000000 {
 		opp-hz = /bits/ 64 <1488000000>;
 		opp-microvolt = <1475000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1512000000 {
 		opp-hz = /bits/ 64 <1512000000>;
 		opp-microvolt = <1475000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 	opp-1608000000 {
 		opp-hz = /bits/ 64 <1608000000>;
 		opp-microvolt = <1475000>;
 		clock-latency-ns = <40000>;
-		status = "disabled";
+		status = "okay";
+		turbo-mode;
 	};
 };
 
