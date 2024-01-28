@@ -1,18 +1,43 @@
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile
---- linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile	2023-04-19 13:45:06.264555344 +0200
-+++ linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile	2023-04-19 13:44:02.417891014 +0200
-@@ -73,6 +73,7 @@
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg503.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-pinenote-v1.1.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-pinenote-v1.2.dtb
+
+This adds DT for Radxa Rock3 Model C SBC.
+
+This patch offers DT with support for following peripherials:
+
+* UART
+* LAN
+* Wifi
+* BT
+* SD Card
+* 2x USB2 (left side top and bootom ports)
+* 1x USB3 (center bootom port)
+* HDMI
+* GPU
+* HDMI Audio
+* Analog Audio
+* CEC
+* Hantro MPEG2/VP8/H.264 decoder
+* CPU/GPU Thermal sensors
+
+Missing support:
+* RKVDEC HEVC/VP9 decoder
+* USB2 OTG port (top center port)
+
+
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.1-rc4/arch/arm64/boot/dts/rockchip/Makefile linux-6.1-rc4/arch/arm64/boot/dts/rockchip/Makefile
+--- linux-6.1-rc4/arch/arm64/boot/dts/rockchip/Makefile	2022-11-09 19:18:44.290010168 +0100
++++ linux-6.1-rc4/arch/arm64/boot/dts/rockchip/Makefile	2022-11-09 19:16:43.980009283 +0100
+@@ -70,6 +70,7 @@
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-roc-pc.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-x96_x6.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-cm4.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rock-3c.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-quartz64-a.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-quartz64-b.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-cm3-io.dtb
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
---- linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	1970-01-01 01:00:00.000000000 +0100
-+++ linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	2023-04-19 13:43:14.851226078 +0200
-@@ -0,0 +1,734 @@
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bpi-r2-pro.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-evb1-v10.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3a.dtb
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.1-rc4/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts linux-6.1-rc4/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
+--- linux-6.1-rc4/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	1970-01-01 01:00:00.000000000 +0100
++++ linux-6.1-rc4/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	2022-11-09 19:14:06.783341486 +0100
+@@ -0,0 +1,738 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +
 +/*
@@ -78,7 +103,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	sound {
 +		compatible = "simple-audio-card";
 +		simple-audio-card,format = "i2s";
-+		simple-audio-card,name = "ANALOG";
++		simple-audio-card,name = "Analog RK809";
 +		simple-audio-card,mclk-fs = <256>;
 +
 +		simple-audio-card,cpu {
@@ -222,6 +247,10 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +};
 +
 +&hdmi {
++	assigned-clocks = <&cru CLK_HDMI_CEC>;
++	assigned-clock-rates = <32768>;
++	avdd-0v9-supply = <&vdda0v9_image>;
++	avdd-1v8-supply = <&vcca1v8_image>;
 +	status = "okay";
 +};
 +

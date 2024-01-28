@@ -1,18 +1,15 @@
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile
---- linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile	2023-04-19 13:39:39.037900611 +0200
-+++ linux-6.3-rc7/arch/arm64/boot/dts/rockchip/Makefile	2023-04-19 13:38:19.514570217 +0200
-@@ -89,6 +89,7 @@
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-odroid-m1.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-radxa-e25.dtb
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.0-rc7/arch/arm64/boot/dts/rockchip/Makefile linux-6.0-rc7/arch/arm64/boot/dts/rockchip/Makefile
+--- linux-6.0-rc7/arch/arm64/boot/dts/rockchip/Makefile	2022-09-28 10:36:55.346423241 +0200
++++ linux-6.0-rc7/arch/arm64/boot/dts/rockchip/Makefile	2022-09-28 10:35:36.859759976 +0200
+@@ -67,3 +67,4 @@
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bpi-r2-pro.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-evb1-v10.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3a.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3b.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-edgeble-neu6a-io.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-evb1-v10.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b.dtb
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts
---- linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts	1970-01-01 01:00:00.000000000 +0100
-+++ linux-6.3-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts	2023-04-19 13:37:14.484572556 +0200
-@@ -0,0 +1,905 @@
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.0-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts linux-6.0-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts
+--- linux-6.0-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts	1970-01-01 01:00:00.000000000 +0100
++++ linux-6.0-rc7/arch/arm64/boot/dts/rockchip/rk3568-rock-3b.dts	2022-09-27 17:36:34.585786986 +0200
+@@ -0,0 +1,767 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +
 +/*
@@ -45,6 +42,14 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		stdout-path = "serial2:1500000n8";
 +	};
 +
++	adc_keys: adc-keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++	};
++
 +	hdmi-con {
 +		compatible = "hdmi-connector";
 +		type = "a";
@@ -54,20 +59,6 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +				remote-endpoint = <&hdmi_out_con>;
 +			};
 +		};
-+	};
-+
-+	gmac0_clkin: external-gmac0-clock {
-+		compatible = "fixed-clock";
-+		clock-frequency = <125000000>;
-+		clock-output-names = "gmac0_clkin";
-+		#clock-cells = <0>;
-+	};
-+
-+	gmac1_clkin: external-gmac1-clock {
-+		compatible = "fixed-clock";
-+		clock-frequency = <125000000>;
-+		clock-output-names = "gmac1_clkin";
-+		#clock-cells = <0>;
 +	};
 +
 +	leds {
@@ -86,80 +77,25 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	rk809-sound {
 +		compatible = "simple-audio-card";
 +		simple-audio-card,format = "i2s";
-+		simple-audio-card,name = "ANALOG";
++		simple-audio-card,name = "Analog RK809";
 +		simple-audio-card,mclk-fs = <256>;
 +
 +		simple-audio-card,cpu {
 +			sound-dai = <&i2s1_8ch>;
 +		};
-+
 +		simple-audio-card,codec {
 +			sound-dai = <&rk809>;
 +		};
 +	};
 +
-+	sdio_pwrseq: sdio-pwrseq {
-+		compatible = "mmc-pwrseq-simple";
-+		clocks = <&rk809 1>;
-+		clock-names = "ext_clock";
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&wifi_enable>;
-+		post-power-on-delay-ms = <100>;
-+		power-off-delay-us = <5000000>;
-+		reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
-+	};
-+
-+	vcc12v_dcin: vcc12v-dcin-regulator {
++	vcc12v_dcin: vcc12v-dcin {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc12v_dcin";
 +		regulator-always-on;
 +		regulator-boot-on;
 +	};
 +
-+	pcie30_avdd0v9: pcie30-avdd0v9-regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "pcie30_avdd0v9";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-min-microvolt = <900000>;
-+		regulator-max-microvolt = <900000>;
-+		vin-supply = <&vcc3v3_sys>;
-+	};
-+
-+	pcie30_avdd1v8: pcie30-avdd1v8-regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "pcie30_avdd1v8";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		vin-supply = <&vcc3v3_sys>;
-+	};
-+
-+	/* pi6c pcie clock generator */
-+	vcc3v3_pi6c_03: vcc3v3-pi6c-03-regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc3v3_pi6c_03";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc5v0_sys>;
-+	};
-+
-+	vcc3v3_pcie: vcc3v3-pcie-regulator {
-+		compatible = "regulator-fixed";
-+		enable-active-high;
-+		gpios = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&pcie_enable_h>;
-+		regulator-name = "vcc3v3_pcie";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc5v0_sys>;
-+	};
-+
-+	vcc3v3_sys: vcc3v3-sys-regulator {
++	vcc3v3_sys: vcc3v3-sys {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc3v3_sys";
 +		regulator-always-on;
@@ -169,7 +105,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		vin-supply = <&vcc12v_dcin>;
 +	};
 +
-+	vcc5v0_sys: vcc5v0-sys-regulator {
++	vcc5v0_sys: vcc5v0-sys {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc5v0_sys";
 +		regulator-always-on;
@@ -179,7 +115,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		vin-supply = <&vcc12v_dcin>;
 +	};
 +
-+	vcc5v0_usb: vcc5v0-usb-regulator {
++	vcc5v0_usb: vcc5v0-usb {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc5v0_usb";
 +		regulator-always-on;
@@ -189,7 +125,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		vin-supply = <&vcc12v_dcin>;
 +	};
 +
-+	vcc5v0_usb_host: vcc5v0-usb-host-regulator {
++	vcc5v0_usb_host: vcc5v0-usb-host {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
 +		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
@@ -201,72 +137,58 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		vin-supply = <&vcc5v0_usb>;
 +	};
 +
-+	vcc5v0_usb_hub: vcc5v0-usb-hub-regulator {
-+		compatible = "regulator-fixed";
-+		enable-active-high;
-+		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&vcc5v0_usb_hub_en>;
-+		regulator-name = "vcc5v0_usb_hub";
-+		regulator-always-on;
-+		vin-supply = <&vcc5v0_usb>;
-+	};
-+
-+	vcc5v0_usb_otg: vcc5v0-usb-otg-regulator {
++	vcc5v0_usb_otg: vcc5v0-otg-regulator {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
 +		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&vcc5v0_usb_otg_en>;
-+		regulator-name = "vcc5v0_usb_otg";
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
-+		vin-supply = <&vcc5v0_usb>;
++		pinctrl-0 = <&vcc5v0_otg_en>;
++		regulator-name = "vcc5v0_otg";
++		regulator-always-on;
++		regulator-boot-on;
 +	};
 +
-+	vcc_cam: vcc-cam-regulator {
++	vcc5v0_usb_usbhub: vcc5v0-usbhub-regulator {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
-+		gpio = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&vcc_cam_en>;
-+		regulator-name = "vcc_cam";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc3v3_sys>;
-+
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
++		pinctrl-0 = <&vcc5v0_hub_en>;
++		regulator-name = "vcc5v0_hub";
++		regulator-always-on;
 +	};
 +
-+	vcc_mipi: vcc-mipi-regulator {
++	pcie30_avdd0v9: pcie30-avdd0v9 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie30_avdd0v9";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <900000>;
++		vin-supply = <&vcc3v3_sys>;
++	};
++
++	pcie30_avdd1v8: pcie30-avdd1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie30_avdd1v8";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		vin-supply = <&vcc3v3_sys>;
++	};
++
++	vcc3v3_pcie_p: vcc3v3-pcie-p {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
-+		gpio = <&gpio3 RK_PC0 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&vcc_mipi_en>;
-+		regulator-name = "vcc_mipi";
++		pinctrl-0 = <&pcie_enable_h>;
++		regulator-name = "vcc3v3_pcie_p";
 +		regulator-min-microvolt = <3300000>;
 +		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc3v3_sys>;
-+
-+		regulator-state-mem {
-+			regulator-off-in-suspend;
-+		};
++		vin-supply = <&vcc12v_dcin>;
 +	};
-+};
-+
-+&combphy0 {
-+	status = "okay";
-+};
-+
-+&combphy1 {
-+	status = "okay";
-+};
-+
-+&combphy2 {
-+	status = "okay";
 +};
 +
 +&cpu0 {
@@ -286,45 +208,72 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +};
 +
 +&gmac0 {
-+	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
-+	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>, <&gmac0_clkin>;
-+	clock_in_out = "input";
-+	phy-handle = <&rgmii_phy0>;
-+	phy-mode = "rgmii-id";
-+	phy-supply = <&vcc_3v3>;
-+	pinctrl-0 = <&eth0_phy_rst>;
-+	snps,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
++	phy-mode = "rgmii";
++	clock_in_out = "output";
++
++	snps,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>; //GMAC0_RSTn_GPIO3_B7
 +	snps,reset-active-low;
++	/* Reset time is 20ms, 100ms for rtl8211f */
 +	snps,reset-delays-us = <0 20000 100000>;
++
++	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
++	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
++	assigned-clock-rates = <0>, <125000000>;
++
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&gmac0_miim
 +		     &gmac0_tx_bus2
 +		     &gmac0_rx_bus2
 +		     &gmac0_rgmii_clk
-+		     &gmac0_clkinout
 +		     &gmac0_rgmii_bus>;
++
++	tx_delay = <0x36>;
++	rx_delay = <0x2d>;
++
++	phy-handle = <&rgmii_phy0>;
 +	status = "okay";
 +};
 +
 +&gmac1 {
-+	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
-+	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&gmac1_clkin>;
-+	clock_in_out = "input";
-+	phy-handle = <&rgmii_phy1>;
-+	phy-mode = "rgmii-id";
-+	phy-supply = <&vcc_3v3>;
-+	pinctrl-0 = <&eth1_phy_rst>;
-+	snps,reset-gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
++	phy-mode = "rgmii";
++	clock_in_out = "output";
++
++	snps,reset-gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;	//GMAC1_RSTn_GPIO3_B0
 +	snps,reset-active-low;
-+	snps,reset-delays-us = <0 20000 100000>;
++	/* Reset time is 20ms, 100ms for rtl8211f */
++	//snps,reset-delays-us = <0 20000 100000>;
++	snps,reset-delays-us = <0 50000 150000>;
++
++	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
++	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
++	assigned-clock-rates = <0>, <125000000>;
++
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&gmac1m1_miim
 +		     &gmac1m1_tx_bus2
 +		     &gmac1m1_rx_bus2
 +		     &gmac1m1_rgmii_clk
-+		     &gmac1m1_clkinout
 +		     &gmac1m1_rgmii_bus>;
++
++	tx_delay = <0x47>;
++	rx_delay = <0x28>;
++
++	phy-handle = <&rgmii_phy1>;
 +	status = "okay";
++};
++
++&mdio0 {
++	rgmii_phy0: phy@0 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <0x0>;
++	};
++};
++
++&mdio1 {
++	rgmii_phy1: phy@0 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <0x0>;
++	};
 +};
 +
 +&gpu {
@@ -333,6 +282,8 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +};
 +
 +&hdmi {
++	assigned-clocks = <&cru CLK_HDMI_CEC>;
++	assigned-clock-rates = <32768>;
 +	avdd-0v9-supply = <&vdda0v9_image>;
 +	avdd-1v8-supply = <&vcca1v8_image>;
 +	status = "okay";
@@ -348,6 +299,10 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	hdmi_out_con: endpoint {
 +		remote-endpoint = <&hdmi_con_in>;
 +	};
++};
++
++&i2s0_8ch {
++	status = "okay";
 +};
 +
 +&hdmi_sound {
@@ -594,129 +549,47 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	};
 +};
 +
-+&i2c3 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c3m1_xfer>;
-+	status = "disabled";
-+};
-+
-+&i2c4 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c4m1_xfer>;
-+	status = "disabled";
-+};
-+
-+&i2c5 {
-+	status = "okay";
-+
-+	hym8563: rtc@51 {
-+		compatible = "haoyu,hym8563";
-+		reg = <0x51>;
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <RK_PD3 IRQ_TYPE_LEVEL_LOW>;
-+		#clock-cells = <0>;
-+		clock-output-names = "rtcic_32kout";
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&hym8563_int>;
-+		wakeup-source;
-+	};
-+};
-+
-+&i2s0_8ch {
-+	status = "okay";
-+};
-+
 +&i2s1_8ch {
 +	pinctrl-names = "default";
-+	pinctrl-0 = <&i2s1m0_sclktx &i2s1m0_lrcktx &i2s1m0_sdi0 &i2s1m0_sdo0>;
++	pinctrl-0 = <&i2s1m0_sclktx
++		     &i2s1m0_lrcktx
++		     &i2s1m0_sdi0
++		     &i2s1m0_sdo0>;
 +	rockchip,trcm-sync-tx-only;
-+	status = "okay";
-+};
-+
-+&i2s2_2ch {
-+	rockchip,trcm-sync-tx-only;
-+	status = "okay";
-+};
-+
-+&mdio0 {
-+	rgmii_phy0: ethernet-phy@0 {
-+		compatible = "ethernet-phy-ieee802.3-c22";
-+		reg = <0x0>;
-+	};
-+};
-+
-+&mdio1 {
-+	rgmii_phy1: ethernet-phy@0 {
-+		compatible = "ethernet-phy-ieee802.3-c22";
-+		reg = <0x0>;
-+	};
-+};
-+
-+&pcie2x1 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pcie_reset_h>;
-+	reset-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
-+	vpcie3v3-supply = <&vcc3v3_pcie>;
 +	status = "okay";
 +};
 +
 +&pcie30phy {
-+	phy-supply = <&vcc3v3_pi6c_03>;
 +	status = "okay";
 +};
 +
 +&pcie3x2 {
 +	pinctrl-names = "default";
-+	pinctrl-0 = <&pcie30x2m1_pins>;
++	pinctrl-0 = <&pcie_reset_x2>;
 +	reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
-+	vpcie3v3-supply = <&vcc3v3_pcie>;
++	vpcie3v3-supply = <&vcc3v3_pcie_p>;
++	status = "okay";
++};
++
++&pcie2x1 {
++	rockchip,bifurcation;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_reset_x1>;
++	reset-gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie_p>;
 +	status = "okay";
 +};
 +
 +&pinctrl {
-+	cam {
-+		vcc_cam_en: vcc_cam_en {
-+			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
-+	display {
-+		vcc_mipi_en: vcc_mipi_en {
-+			rockchip,pins = <3 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
-+	ethernet0 {
-+		eth0_phy_rst: eth0_phy_rst {
-+			rockchip,pins = <3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
-+	ethernet1 {
-+		eth1_phy_rst: eth0_phy_rst {
++	ethernet {
++		eth_phy_rst: eth_phy_rst {
 +			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
-+	hym8563 {
-+		hym8563_int: hym8563-int {
-+			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +	};
 +
 +	leds {
 +		led_user_en: led_user_en {
 +			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
-+	pcie {
-+		pcie_enable_h: pcie-enable-h {
-+			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+
-+		pcie_reset_h: pcie-reset-h {
-+			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
@@ -731,31 +604,28 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		vcc5v0_usb_host_en: vcc5v0_usb_host_en {
 +			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
-+		vcc5v0_usb_hub_en: vcc5v0_usb_hub_en {
-+			rockchip,pins = <0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+		vcc5v0_usb_otg_en: vcc5v0_usb_otg_en {
++
++		vcc5v0_otg_en: vcc5v0-otg-en {
 +			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
-+	};
 +
-+	bt {
-+		bt_enable: bt-enable {
-+			rockchip,pins = <4 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+
-+		bt_host_wake: bt-host-wake {
-+			rockchip,pins = <4 RK_PB4 RK_FUNC_GPIO &pcfg_pull_down>;
-+		};
-+
-+		bt_wake: bt-wake {
-+			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
++		vcc5v0_hub_en: vcc5v0-hub-en {
++			rockchip,pins = <0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
-+	sdio-pwrseq {
-+		wifi_enable: wifi-enable {
-+			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
++	pcie {
++		pcie_enable_h: pcie-enable-h {
++			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++
++		pcie_reset_x1: pcie-reset-x1 {
++			rockchip,pins = <3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		pcie_reset_x2: pcie-reset-x2 {
++			rockchip,pins = <2 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +};
@@ -796,25 +666,9 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	disable-wp;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
-+	sd-uhs-sdr50;
++	sd-uhs-sdr104;
 +	vmmc-supply = <&vcc3v3_sd>;
 +	vqmmc-supply = <&vccio_sd>;
-+	status = "okay";
-+};
-+
-+&sdmmc2 {
-+	bus-width = <4>;
-+	disable-wp;
-+	cap-sd-highspeed;
-+	cap-sdio-irq;
-+	keep-power-in-suspend;
-+	mmc-pwrseq = <&sdio_pwrseq>;
-+	non-removable;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&sdmmc2m0_bus4 &sdmmc2m0_cmd &sdmmc2m0_clk>;
-+	sd-uhs-sdr104;
-+	vmmc-supply = <&vcc3v3_sys>;
-+	vqmmc-supply = <&vcc_1v8>;
 +	status = "okay";
 +};
 +
@@ -824,81 +678,11 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +	status = "okay";
 +};
 +
-+&uart1 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn &uart1m0_rtsn>;
-+	uart-has-rtscts;
-+	status = "disabled";
-+
-+	bluetooth {
-+		compatible = "brcm,bcm43438-bt";
-+		clocks = <&rk809 1>;
-+		clock-names = "lpo";
-+		device-wakeup-gpios = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
-+		host-wakeup-gpios = <&gpio4 RK_PB4 GPIO_ACTIVE_HIGH>;
-+		shutdown-gpios = <&gpio4 RK_PB2 GPIO_ACTIVE_HIGH>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&bt_host_wake &bt_wake &bt_enable>;
-+		vbat-supply = <&vcc3v3_sys>;
-+		vddio-supply = <&vcc_1v8>;
-+		/* vddio comes from regulator on module, use IO bank voltage instead */
-+	};
-+};
-+
 +&uart2 {
 +	status = "okay";
 +};
 +
 +&usb_host0_ehci {
-+	status = "okay";
-+};
-+
-+&usb_host0_ohci {
-+	status = "okay";
-+};
-+
-+&usb_host0_xhci {
-+	extcon = <&usb2phy0>;
-+	status = "okay";
-+};
-+
-+&usb_host1_ehci {
-+	status = "okay";
-+};
-+
-+&usb_host1_ohci {
-+	status = "okay";
-+};
-+
-+&usb_host1_xhci {
-+	status = "okay";
-+};
-+
-+&usb2phy0 {
-+	status = "okay";
-+};
-+
-+&usb2phy0_host {
-+	phy-supply = <&vcc5v0_usb_host>;
-+	status = "okay";
-+};
-+
-+&usb2phy0_otg {
-+	phy-supply = <&vcc5v0_usb_otg>;
-+	status = "okay";
-+};
-+
-+&usb2phy1 {
-+	status = "okay";
-+};
-+
-+&usb2phy1_host {
-+	phy-supply = <&vcc5v0_usb_host>;
-+	status = "okay";
-+};
-+
-+&usb2phy1_otg {
-+	phy-supply = <&vcc5v0_usb_host>;
 +	status = "okay";
 +};
 +
@@ -917,4 +701,79 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.3-rc7/arch/arm
 +		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
 +		remote-endpoint = <&hdmi_in_vp0>;
 +	};
++};
++
++&vpu {
++	status = "okay";
++};
++
++&vdpu_mmu {
++	status = "okay";
++};
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb2phy0 {
++	status = "okay";
++};
++
++&usb2phy0_host {
++	phy-supply = <&vcc5v0_usb_host>;
++	status = "okay";
++};
++
++&usb_host1_ehci {
++	status = "okay";
++};
++
++&usb_host1_ohci {
++	status = "okay";
++};
++
++&usb2phy1 {
++	status = "okay";
++};
++
++&usb2phy1_host {
++	phy-supply = <&vcc5v0_usb_host>;
++	status = "okay";
++};
++
++&usb2phy1_otg {
++	phy-supply = <&vcc5v0_usb_host>;
++	status = "okay";
++};
++
++&usbdrd30 {
++	status = "okay";
++};
++
++&usbhost30 {
++	status = "okay";
++};
++
++&combphy0 {
++	status = "okay";
++};
++
++&combphy1 {
++	status = "okay";
++};
++
++&combphy2 {
++	status = "okay";
++};
++
++&sata1 {
++	status = "disabled";
++};
++
++&sata2 {
++	status = "disabled";
 +};

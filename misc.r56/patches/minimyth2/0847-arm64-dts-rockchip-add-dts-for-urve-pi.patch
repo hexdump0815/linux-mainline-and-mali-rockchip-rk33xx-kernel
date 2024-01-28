@@ -1,50 +1,23 @@
-
-Add DT for X96-X6 TV box.
-
-X96-X6 is RK3566 based TV Box with HDMI, 2xUSB2, 1xUSB3, GE Eth, SDcard, 2.4/5G WiFi,
-BT4.1 and IR
-
-This patch offers DT with support for following peripherials:
-
-* UART
-* LAN
-* Wifi
-* BT
-* SD Card
-* USB2
-* USB3
-* HDMI
-* GPU
-* Audio
-* CEC
-* IR
-* LED display
-* Hantro MPEG2/VP8/H.264 decoder
-
-Missing support:
-* RKVDEC HEVC/VP9 decoder
-
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64/boot/dts/rockchip/Makefile linux-6.5.3/arch/arm64/boot/dts/rockchip/Makefile
---- linux-6.5.3/arch/arm64/boot/dts/rockchip/Makefile	2023-09-15 11:21:46.546687633 +0200
-+++ linux-6.5.3/arch/arm64/boot/dts/rockchip/Makefile	2023-09-15 11:20:13.890020657 +0200
-@@ -82,6 +82,7 @@
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile
+--- linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile	2023-03-15 21:01:22.791562850 +0100
++++ linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile	2023-03-15 21:00:04.661565714 +0100
+@@ -76,6 +76,7 @@
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-quartz64-b.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-cm3-io.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-roc-pc.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-x96_x6.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-x96_x6.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-urve-pi.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-blade.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-cm4.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-model-a.dtb
-diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts
---- linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts	1970-01-01 01:00:00.000000000 +0100
-+++ linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts	2023-09-15 11:05:21.333350986 +0200
-@@ -0,0 +1,531 @@
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts
+--- linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts	1970-01-01 01:00:00.000000000 +0100
++++ linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts	2023-03-15 20:01:00.998360638 +0100
+@@ -0,0 +1,571 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +
 +/*
 + * Author: Piotr Oniszczuk piotr.oniszczuk@gmail.com
-+ * Based on Quartz64 DT by:
-+ *   Peter Geis pgwipeout@gmail.com
++ * Based on Rockchip BSP DT
 + */
 +
 +/dts-v1/;
@@ -52,11 +25,12 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/pinctrl/rockchip.h>
 +#include <dt-bindings/soc/rockchip,vop2.h>
++#include <dt-bindings/leds/common.h>
 +#include "rk3566.dtsi"
 +
 +/ {
-+	model = "X96 X6 TvBox";
-+	compatible = "amediatech,x96-x6", "rockchip,rk3566";
++	model = "URVE Pi";
++	compatible = "urve,board-pi", "rockchip,rk3566";
 +
 +	aliases {
 +		ethernet0 = &gmac1;
@@ -76,6 +50,30 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		#clock-cells = <0>;
 +	};
 +
++	leds {
++		compatible = "gpio-leds";
++
++		led-work {
++			label = "work-led";
++			default-state = "on";
++			linux,default-trigger = "heartbeat";
++			gpios = <&gpio0 RK_PD3 GPIO_ACTIVE_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&work_led_enable_h>;
++			retain-state-suspended;
++		};
++
++		led-diy {
++			label = "diy-led";
++			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
++			function = LED_FUNCTION_DISK_ACTIVITY;
++			linux,default-trigger = "mmc0";
++			pinctrl-names = "default";
++			pinctrl-0 = <&diy_led_enable_h>;
++			retain-state-suspended;
++		};
++	};
++
 +	hdmi-con {
 +		compatible = "hdmi-connector";
 +		type = "a";
@@ -87,41 +85,10 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		};
 +	};
 +
-+	spdif_dit: spdif-dit {
-+		compatible = "linux,spdif-dit";
-+		#sound-dai-cells = <0>;
-+	};
-+
-+	spdif_sound: spdif-sound {
-+		compatible = "simple-audio-card";
-+		simple-audio-card,name = "SPDIF";
-+
-+		simple-audio-card,cpu {
-+			sound-dai = <&spdif>;
-+		};
-+
-+		simple-audio-card,codec {
-+			sound-dai = <&spdif_dit>;
-+		};
-+	};
-+
 +	sdio_pwrseq: sdio-pwrseq {
 +		status = "okay";
 +		compatible = "mmc-pwrseq-simple";
-+		clocks = <&pmucru CLK_RTC_32K>;
-+		clock-names = "ext_clock";
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&wifi_enable_h &wifi_32k>;
-+		reset-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_LOW>;
-+	};
-+
-+	vcc5v0_sys: vcc5v0-sys {
-+		compatible = "regulator-fixed";
-+		regulator-name = "vcc5v0_sys";
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
++		reset-gpios = <&gpio2 RK_PC6 GPIO_ACTIVE_LOW>;
 +	};
 +
 +	vcc5v0_usb20_host: vcc5v0_usb20_host {
@@ -160,19 +127,6 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		regulator-max-microvolt = <3300000>;
 +	};
 +
-+	vdd_cpu: vdd_cpu {
-+		compatible = "pwm-regulator";
-+		pwms = <&pwm0 0 5000 1>;
-+		regulator-name = "vdd_cpu";
-+		regulator-min-microvolt = <746000>;
-+		regulator-max-microvolt = <1200000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+		regulator-settling-time-up-us = <250>;
-+		pwm-supply = <&vcc5v0_sys>;
-+		status = "okay";
-+	};
-+
 +	vdd_gpu: vdd_gpu {
 +		compatible = "regulator-fixed";
 +		regulator-name = "vdd_gpu";
@@ -195,7 +149,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc5v0_usb_otg";
 +		enable-active-high;
-+		gpio = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&vcc5v0_usb_otg_en_h>;
 +		regulator-always-on;
@@ -207,7 +161,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc5v0_usb30_host";
 +		enable-active-high;
-+		gpio = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio0 RK_PA3 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&vcc5v0_usb30_host_en_h>;
 +		regulator-always-on;
@@ -215,24 +169,85 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +		regulator-max-microvolt = <5000000>;
 +	};
 +
-+	ir-receiver {
-+		compatible = "gpio-ir-receiver";
-+		gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_LOW>;
-+		pinctrl-0 = <&ir_int>;
-+		linux,rc-map-name = "rc-beelink-gs1";
-+		status = "okay";
++	vcc3v3_pcie_p: vcc3v3-pcie-p-regulator {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcie_enable_h>;
++		regulator-name = "vcc3v3_pcie_p";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_3v3>;
 +	};
 +
-+	openvfd {
-+		compatible = "open,vfd";
-+		dev_name = "openvfd";
-+		openvfd_gpio_dat = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
-+		openvfd_gpio_clk = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
-+		openvfd_gpio_stb = <&gpio4 RK_PC6 GPIO_ACTIVE_LOW>;
-+		openvfd_chars = [04 00 01 02 03];
-+		openvfd_dot_bits = [00 01 02 03 04 05 06];
-+		openvfd_display_type = <0x00010002>;
-+		status = "okay";
++	es8388-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,name = "ANALOG";
++		simple-audio-card,mclk-fs = <256>;
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s1_8ch>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&es8388>;
++		};
++	};
++
++};
++
++&i2c0 {
++	status = "okay";
++	vdd_cpu: tcs4525@1c {
++		compatible = "tcs,tcs4525";
++		reg = <0x1c>;
++		vin-supply = <&vcc_sys>;
++		regulator-name = "vdd_cpu";
++		regulator-min-microvolt = <712500>;
++		regulator-max-microvolt = <1390000>;
++		regulator-ramp-delay = <2300>;
++		fcs,suspend-voltage-selector = <1>;
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-state-mem {
++			regulator-off-in-suspend;
++		};
++	};
++
++	// minimal rk817 declaration only for bluetooth clock
++	rk817: pmic@20 {
++		compatible = "rockchip,rk817";
++		reg = <0x20>;
++		#clock-cells = <1>;
++	};
++
++	hym8563: rtc@51 {
++		compatible = "haoyu,hym8563";
++		reg = <0x51>;
++		#clock-cells = <0>;
++		clock-output-names = "rtcic_32kout";
++		pinctrl-names = "default";
++		pinctrl-0 = <&hym8563_int>;
++		wakeup-source;
++	};
++
++	es8388: es8388@10 {
++		compatible = "everest,es8388", "everest,es8328";
++		reg = <0x10>;
++		DVDD-supply = <&vcc_3v3>;
++		AVDD-supply = <&vcc_3v3>;
++		PVDD-supply = <&vcc_3v3>;
++		HPVDD-supply = <&vcc_3v3>;
++		assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
++		assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
++		clock-names = "mclk";
++		clocks = <&cru I2S1_MCLKOUT_TX>;
++		assigned-clock-rates = <0xbb8000>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&i2s1m0_mclk>;
++		#sound-dai-cells = <0>;
 +	};
 +};
 +
@@ -252,38 +267,41 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +	cpu-supply = <&vdd_cpu>;
 +};
 +
-+&pwm0 {
-+	status = "okay";
-+};
-+
 +&gmac1 {
 +	phy-mode = "rgmii";
-+	clock_in_out = "input";
++	clock_in_out = "output";
 +	snps,reset-gpio = <&gpio4 RK_PC2 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	/* Reset time is 20ms, 100ms for rtl8211f */
 +	snps,reset-delays-us = <0 20000 100000>;
 +	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
-+	assigned-clock-parents =  <&cru SCLK_GMAC1_RGMII_SPEED>, <&gmac1_clkin>;
++	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&cru CLK_MAC1_2TOP>;
++	assigned-clock-rates = <0>, <125000000>;
 +	pinctrl-names = "default";
-+	pinctrl-0 = <&gmac1m1_miim
-+		    &gmac1m1_tx_bus2
-+		    &gmac1m1_rx_bus2
-+		    &gmac1m1_rgmii_clk
-+		    &gmac1m1_rgmii_bus
-+		    &gmac1m1_clkinout>;
-+	tx_delay = <0x4f>;
-+	rx_delay = <0x2d>;
++	pinctrl-0 = <&gmac1m0_miim
++		     &gmac1m0_tx_bus2_level3
++		     &gmac1m0_rx_bus2
++		     &gmac1m0_rgmii_clk_level2
++		     &gmac1m0_rgmii_bus_level3>;
++	tx_delay = <0x41>;
++	rx_delay = <0x2e>;
 +	phy-handle = <&rgmii_phy1>;
-+	mac-address = [00 50 43 02 02 02];
 +	status = "okay";
 +};
 +
 +&mdio1 {
-+	rgmii_phy1: ethernet-phy@1 {
++	rgmii_phy1: ethernet-phy@0 {
 +		compatible = "ethernet-phy-ieee802.3-c22";
-+		reg = <0x1>;
++		reg = <0x0>;
 +	};
++};
++
++&pcie2x1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_reset_h>;
++	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie_p>;
++	status = "okay";
 +};
 +
 +&hdmi {
@@ -345,17 +363,6 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +	};
 +};
 +
-+&i2c0 {
-+	status = "okay";
-+
-+	// minimal rk817 declaration only for bluetooth clock
-+	rk817: pmic@20 {
-+		compatible = "rockchip,rk817";
-+		reg = <0x20>;
-+		#clock-cells = <1>;
-+	};
-+};
-+
 +&i2s0_8ch {
 +	status = "okay";
 +};
@@ -387,41 +394,49 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +
 +	sdio-pwrseq {
 +		wifi_enable_h: wifi-enable-h {
-+			rockchip,pins = <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+
-+		wifi_32k: wifi-32k {
-+			rockchip,pins = <0 RK_PB0 2 &pcfg_pull_none>;
++			rockchip,pins = <2 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
 +	usb {
 +		vcc5v0_usb30_host_en_h: vcc5v0-usb30-host-en_h {
-+			rockchip,pins = <0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +
 +		vcc5v0_usb_otg_en_h: vcc5v0-usb-otg-en_h {
-+			rockchip,pins = <0 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
-+	ir {
-+		ir_int: ir-int {
-+			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
++	pcie {
++		pcie_enable_h: pcie-enable-h {
++			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		pcie_reset_h: pcie-reset-h {
++			rockchip,pins = <3 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
-+	led {
-+		led_gpio_dat: led_gpio_dat {
-+			rockchip,pins = <4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
++	leds {
++		work_led_enable_h: work-led-enable-h {
++			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +
-+		led_gpio_clk: led_gpio_clk {
-+			rockchip,pins = <4 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
++		diy_led_enable_h: diy-led-enable-h {
++			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
++	};
 +
-+		led_gpio_stb: led_gpio_stb {
-+			rockchip,pins = <4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
++	es8388 {
++		hp_det_pin: hp-det-pin {
++			rockchip,pins = <3 RK_PD1 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++	};
++
++	hym8563 {
++		hym8563_int: hym8563-int {
++			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +	};
 +};
@@ -453,17 +468,8 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
 +	vmmc-supply = <&vcc_3v3>;
-+	vqmmc-supply = <&vcc_1v8>;
++	vqmmc-supply = <&vcc_3v3>;
 +	status = "okay";
-+};
-+
-+&spdif {
-+	status = "okay";
-+};
-+
-+&spi1 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&spi1m1_cs0 &spi1m1_pins>;
 +};
 +
 +&tsadc {
@@ -569,4 +575,12 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
 +
 +&combphy2 {
 +	status = "okay";
++};
++
++&sata1 {
++	status = "disabled";
++};
++
++&sata2 {
++	status = "disabled";
 +};

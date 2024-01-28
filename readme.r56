@@ -5,8 +5,8 @@
 # - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
 # name: stb-r56 - rockchip rk356x
 
-# info: patches based on minimyth2 patches at commit 389e4b6f6471a40564f837bb6fc94b0741aa1150
-#                                rechecked at commit ff074a8121655fe9d13ca5fdbc30bc46faf30868
+# info: based on warpme minimyth2 patches from https://github.com/warpme/minimyth2
+#       at commit 67c1dec6e93743c8f4de1d5299d06f4036a8ea2b (linux-6.6 subdir)
 
 cd /compile/source/linux-stable-r56
 
@@ -16,6 +16,10 @@ for i in /compile/doc/stable-rk/misc.r56/patches/minimyth2/*.patch; do
   echo === $i
   patch -p1 < $i
 done
+
+# patches:
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/stable-rk/misc.r56/patches/fix-kernel-version-number-v6.6.patch
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-rk/misc.r56/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-rk/misc.r56/options/additional-options-special.cfg
