@@ -20,6 +20,12 @@ done
 # patches:
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/stable-rk/misc.r56/patches/fix-kernel-version-number-v6.6.patch
+# add some own dtb files
+cp -v /compile/doc/stable-rk/misc.r56/dtb/*.dts arch/arm64/boot/dts/rockchip
+cp -v /compile/doc/stable-rk/misc.r56/dtb/*.dtsi arch/arm64/boot/dts/rockchip
+patch -p0 < /compile/doc/stable-rk/misc.r56/patches/add-own-dtb-files-v6.6.patch
+# raise the temp limits a bit to avoid throttling too much
+patch -p0 < /compile/doc/stable-rk/misc.r56/patches/rk356x-higher-temps-v6.6.patch
 
 export ARCH=arm64
 scripts/kconfig/merge_config.sh -m arch/arm64/configs/defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/stable-rk/misc.r56/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-aarch64.cfg /compile/doc/stable-rk/misc.r56/options/additional-options-special.cfg
