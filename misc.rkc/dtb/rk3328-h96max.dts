@@ -459,15 +459,15 @@
 	};
 };
 
-&dfi {
-	status = "okay";
-};
+// &dfi {
+// 	status = "okay";
+// };
 
-&dmc {
-	center-supply = <&vdd_logic>;
-	ddr_timing = <&ddr_timing>;
-	status = "okay";
-};
+// &dmc {
+// 	center-supply = <&vdd_logic>;
+// 	ddr_timing = <&ddr_timing>;
+// 	status = "okay";
+// };
 
 &emmc {
 	supports-emmc;

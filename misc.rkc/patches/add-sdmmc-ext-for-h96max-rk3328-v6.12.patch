@@ -1,0 +1,12 @@
+--- /tmp/rk3328.dtsi	2020-02-20 14:40:57.063397342 +0100
++++ arch/arm64/boot/dts/rockchip/rk3328.dtsi	2020-02-18 10:12:15.236934820 +0100
+@@ -24,6 +24,9 @@ aliases {
+ 		gpio1 = &gpio1;
+ 		gpio2 = &gpio2;
+ 		gpio3 = &gpio3;
++		mmc0 = &emmc;
++		mmc1 = &sdmmc;
++		mmc2 = &sdmmc_ext;
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
+ 		serial2 = &uart2;
