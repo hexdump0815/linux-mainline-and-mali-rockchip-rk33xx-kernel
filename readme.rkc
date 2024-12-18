@@ -38,7 +38,7 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane-v6.12
 # TODO: adjustment to v6.12 still required
 # patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.patch
 # fix kernel version number: + instead of -dirty at the end
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/fix-kernel-version-number-v6.6.patch
+patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/fix-kernel-version-number-v6.12.5.patch
 
 # not needed anymore with v6.12 as 8723cs support is now in the regurlar mainline kernel
 # # add the rtl8723cs sdio wifi driver
