@@ -32,9 +32,9 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-cm3-io.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-roc-pc.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-x96_x6.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rock-3c.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-blade.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-cm4.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-model-a.dtb
 diff --speed-large-files --no-dereference --minimal -Naur linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts
 --- linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts	1970-01-01 01:00:00.000000000 +0100
 +++ linux-6.5.3/arch/arm64/boot/dts/rockchip/rk3566-x96_x6.dts	2023-09-15 11:05:21.333350986 +0200

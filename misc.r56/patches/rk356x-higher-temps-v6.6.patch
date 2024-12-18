@@ -1,5 +1,5 @@
---- arch/arm64/boot/dts/rockchip/rk356x.dtsi.org	2024-01-29 20:35:47.636423375 +0100
-+++ arch/arm64/boot/dts/rockchip/rk356x.dtsi	2024-01-29 20:36:47.502566544 +0100
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi.org	2024-01-29 20:35:47.636423375 +0100
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi	2024-01-29 20:36:47.502566544 +0100
 @@ -1524,17 +1524,17 @@
  
  			trips {

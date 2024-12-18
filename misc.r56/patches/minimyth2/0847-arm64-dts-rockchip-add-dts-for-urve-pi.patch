@@ -2,13 +2,13 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.2.6/arch/arm64
 --- linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile	2023-03-15 21:01:22.791562850 +0100
 +++ linux-6.2.6/arch/arm64/boot/dts/rockchip/Makefile	2023-03-15 21:00:04.661565714 +0100
 @@ -76,6 +76,7 @@
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-quartz64-b.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-cm3-io.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-roc-pc.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-x96_x6.dtb
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-urve-pi.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rock-3c.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-blade.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-cm4.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-soquartz-model-a.dtb
 diff --speed-large-files --no-dereference --minimal -Naur linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts
 --- linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts	1970-01-01 01:00:00.000000000 +0100
 +++ linux-6.2.6/arch/arm64/boot/dts/rockchip/rk3566-urve-pi.dts	2023-03-15 20:01:00.998360638 +0100
@@ -67,7 +67,7 @@ diff --speed-large-files --no-dereference --minimal -Naur linux-6.2.6/arch/arm64
 +			label = "diy-led";
 +			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
 +			function = LED_FUNCTION_DISK_ACTIVITY;
-+			linux,default-trigger = "mmc0";
++			linux,default-trigger = "disk-activity";
 +			pinctrl-names = "default";
 +			pinctrl-0 = <&diy_led_enable_h>;
 +			retain-state-suspended;

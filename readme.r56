@@ -6,7 +6,7 @@
 # name: stb-r56 - rockchip rk356x
 
 # info: based on warpme minimyth2 patches from https://github.com/warpme/minimyth2
-#       at commit 67c1dec6e93743c8f4de1d5299d06f4036a8ea2b (linux-6.6 subdir)
+#       at commit ebde095d4cac6809cf9e156ce636e14402fdd9d4 (linux-6.12 subdir)
 
 cd /compile/source/linux-stable-r56
 
