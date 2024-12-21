@@ -3,3 +3,5 @@ those patches were taken from https://github.com/warpme/minimyth2 at commit ebde
 all credits for them go to warpme
 
 only the more generic patches potentially relevant for the supported rk356x systems were taken
+
+the "off" subdir of the minimyth2 patches contain patches which are not used so far
