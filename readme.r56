@@ -24,6 +24,8 @@ cp -v /compile/doc/stable-rk/misc.r56/dtb/*.dtsi arch/arm64/boot/dts/rockchip
 patch -p1 < /compile/doc/stable-rk/misc.r56/patches/add-own-dtb-files-v6.12.patch
 # raise the temp limits a bit to avoid throttling too much
 patch -p1 < /compile/doc/stable-rk/misc.r56/patches/rk356x-higher-temps-v6.6.patch
+# remove panfrost purge log spam
+patch -p1 < /compile/doc/kernel-extra-patches/remove-panfrost-purge-log-spam/v6.12.12.patch
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 

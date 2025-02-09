@@ -38,6 +38,8 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane-v6.12
 # get rid of mmc errors, emmc/sd disk corruption and wifi problems
 # TODO: adjustment to v6.12 still required
 # patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.patch
+# remove panfrost purge log spam
+patch -p1 < /compile/doc/kernel-extra-patches/remove-panfrost-purge-log-spam/v6.12.12.patch
 # fix kernel version number: + instead of -dirty at the end
 patch -p1 < /compile/doc/kernel-extra-patches/fix-kernel-version/v6.12.5.patch
 
