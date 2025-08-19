@@ -1,7 +1,6 @@
-diff --git a/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts b/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
-index 887c9be1b410..05925c26d1e2 100644
---- a/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
-+++ b/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
+diff --speed-large-files --no-dereference --minimal -Naur linux-6.11/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts linux-6.11/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
+--- linux-6.11/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	2024-09-15 16:57:56.000000000 +0200
++++ linux-6.11/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts	2024-09-20 12:47:58.034592444 +0200
 @@ -1,20 +1,28 @@
  // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
  
@@ -36,7 +35,7 @@ index 887c9be1b410..05925c26d1e2 100644
  		mmc2 = &sdmmc1;
  	};
  
-@@ -43,56 +51,63 @@ hdmi_con_in: endpoint {
+@@ -43,56 +51,63 @@
  	leds {
  		compatible = "gpio-leds";
  
@@ -126,7 +125,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	};
  
  	vcc5v0_sys: vcc5v0-sys-regulator {
-@@ -102,16 +117,26 @@ vcc5v0_sys: vcc5v0-sys-regulator {
+@@ -102,16 +117,26 @@
  		regulator-boot-on;
  		regulator-min-microvolt = <5000000>;
  		regulator-max-microvolt = <5000000>;
@@ -156,7 +155,7 @@ index 887c9be1b410..05925c26d1e2 100644
  		regulator-min-microvolt = <5000000>;
  		regulator-max-microvolt = <5000000>;
  		vin-supply = <&vcc5v0_sys>;
-@@ -119,47 +144,16 @@ vcc5v0_usb30_host: vcc5v0-usb30-host-regulator {
+@@ -119,47 +144,16 @@
  
  	vcc5v0_usb_otg: vcc5v0-usb-otg-regulator {
  		compatible = "regulator-fixed";
@@ -207,7 +206,7 @@ index 887c9be1b410..05925c26d1e2 100644
  };
  
  &combphy1 {
-@@ -187,19 +181,25 @@ &cpu3 {
+@@ -187,19 +181,25 @@
  };
  
  &gmac1 {
@@ -239,7 +238,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	status = "okay";
  };
  
-@@ -209,8 +209,6 @@ &gpu {
+@@ -209,8 +209,6 @@
  };
  
  &hdmi {
@@ -248,7 +247,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	status = "okay";
  };
  
-@@ -238,11 +236,11 @@ vdd_cpu: regulator@1c {
+@@ -238,11 +236,11 @@
  		reg = <0x1c>;
  		fcs,suspend-voltage-selector = <1>;
  		regulator-name = "vdd_cpu";
@@ -262,7 +261,7 @@ index 887c9be1b410..05925c26d1e2 100644
  		vin-supply = <&vcc5v0_sys>;
  
  		regulator-state-mem {
-@@ -255,10 +253,19 @@ rk809: pmic@20 {
+@@ -255,10 +253,19 @@
  		reg = <0x20>;
  		interrupt-parent = <&gpio0>;
  		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
@@ -284,7 +283,7 @@ index 887c9be1b410..05925c26d1e2 100644
  		vcc1-supply = <&vcc3v3_sys>;
  		vcc2-supply = <&vcc3v3_sys>;
  		vcc3-supply = <&vcc3v3_sys>;
-@@ -268,21 +275,19 @@ rk809: pmic@20 {
+@@ -268,21 +275,19 @@
  		vcc7-supply = <&vcc3v3_sys>;
  		vcc8-supply = <&vcc3v3_sys>;
  		vcc9-supply = <&vcc3v3_sys>;
@@ -310,7 +309,7 @@ index 887c9be1b410..05925c26d1e2 100644
  					regulator-suspend-microvolt = <900000>;
  				};
  			};
-@@ -291,9 +296,9 @@ vdd_gpu: DCDC_REG2 {
+@@ -291,9 +296,9 @@
  				regulator-name = "vdd_gpu";
  				regulator-always-on;
  				regulator-boot-on;
@@ -322,7 +321,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				regulator-ramp-delay = <6001>;
  
  				regulator-state-mem {
-@@ -307,7 +312,6 @@ vcc_ddr: DCDC_REG3 {
+@@ -307,7 +312,6 @@
  				regulator-always-on;
  				regulator-boot-on;
  				regulator-initial-mode = <0x2>;
@@ -330,7 +329,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				regulator-state-mem {
  					regulator-on-in-suspend;
  				};
-@@ -315,11 +319,9 @@ regulator-state-mem {
+@@ -315,11 +319,9 @@
  
  			vdd_npu: DCDC_REG4 {
  				regulator-name = "vdd_npu";
@@ -344,7 +343,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				regulator-state-mem {
  					regulator-off-in-suspend;
  				};
-@@ -333,17 +335,21 @@ vcc_1v8: DCDC_REG5 {
+@@ -333,17 +335,21 @@
  				regulator-max-microvolt = <1800000>;
  
  				regulator-state-mem {
@@ -368,7 +367,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				};
  			};
  
-@@ -355,7 +361,8 @@ vdda_0v9: LDO_REG2 {
+@@ -355,7 +361,8 @@
  				regulator-max-microvolt = <900000>;
  
  				regulator-state-mem {
@@ -378,7 +377,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				};
  			};
  
-@@ -365,7 +372,6 @@ vdda0v9_pmu: LDO_REG3 {
+@@ -365,7 +372,6 @@
  				regulator-boot-on;
  				regulator-min-microvolt = <900000>;
  				regulator-max-microvolt = <900000>;
@@ -386,7 +385,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				regulator-state-mem {
  					regulator-on-in-suspend;
  					regulator-suspend-microvolt = <900000>;
-@@ -380,17 +386,22 @@ vccio_acodec: LDO_REG4 {
+@@ -380,17 +386,22 @@
  				regulator-max-microvolt = <3300000>;
  
  				regulator-state-mem {
@@ -411,7 +410,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				};
  			};
  
-@@ -415,7 +426,8 @@ vcca_1v8: LDO_REG7 {
+@@ -415,7 +426,8 @@
  				regulator-max-microvolt = <1800000>;
  
  				regulator-state-mem {
@@ -421,7 +420,7 @@ index 887c9be1b410..05925c26d1e2 100644
  				};
  			};
  
-@@ -434,39 +446,47 @@ regulator-state-mem {
+@@ -434,39 +446,47 @@
  
  			vcca1v8_image: LDO_REG9 {
  				regulator-name = "vcca1v8_image";
@@ -485,7 +484,7 @@ index 887c9be1b410..05925c26d1e2 100644
  };
  
  &i2s0_8ch {
-@@ -475,7 +495,10 @@ &i2s0_8ch {
+@@ -475,7 +495,10 @@
  
  &i2s1_8ch {
  	pinctrl-names = "default";
@@ -497,7 +496,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	rockchip,trcm-sync-tx-only;
  	status = "okay";
  };
-@@ -484,9 +507,6 @@ &mdio1 {
+@@ -484,9 +507,6 @@
  	rgmii_phy1: ethernet-phy@1 {
  		compatible = "ethernet-phy-ieee802.3-c22";
  		reg = <0x1>;
@@ -507,7 +506,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	};
  };
  
-@@ -494,45 +514,33 @@ &pcie2x1 {
+@@ -494,45 +514,33 @@
  	pinctrl-names = "default";
  	pinctrl-0 = <&pcie_reset_h>;
  	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
@@ -561,7 +560,7 @@ index 887c9be1b410..05925c26d1e2 100644
  			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
  		};
  
-@@ -542,33 +550,31 @@ pcie_reset_h: pcie-reset-h {
+@@ -542,33 +550,31 @@
  	};
  
  	pmic {
@@ -607,7 +606,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	pmuio1-supply = <&vcc3v3_pmu>;
  	pmuio2-supply = <&vcca1v8_pmu>;
  	vccio1-supply = <&vccio_acodec>;
-@@ -578,7 +584,6 @@ &pmu_io_domains {
+@@ -578,7 +584,6 @@
  	vccio5-supply = <&vcc_3v3>;
  	vccio6-supply = <&vcc_3v3>;
  	vccio7-supply = <&vcc_3v3>;
@@ -615,7 +614,7 @@ index 887c9be1b410..05925c26d1e2 100644
  };
  
  &saradc {
-@@ -588,11 +593,8 @@ &saradc {
+@@ -588,11 +593,8 @@
  
  &sdhci {
  	bus-width = <8>;
@@ -627,7 +626,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	vmmc-supply = <&vcc_3v3>;
  	vqmmc-supply = <&vcc_1v8>;
  	status = "okay";
-@@ -601,11 +603,12 @@ &sdhci {
+@@ -601,11 +603,12 @@
  &sdmmc0 {
  	bus-width = <4>;
  	cap-sd-highspeed;
@@ -641,7 +640,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	vqmmc-supply = <&vccio_sd>;
  	status = "okay";
  };
-@@ -618,22 +621,23 @@ &sdmmc1 {
+@@ -618,37 +621,50 @@
  	mmc-pwrseq = <&sdio_pwrseq>;
  	non-removable;
  	pinctrl-names = "default";
@@ -668,8 +667,7 @@ index 887c9be1b410..05925c26d1e2 100644
 +		spi-max-frequency = <24000000>;
  		spi-rx-bus-width = <4>;
  		spi-tx-bus-width = <1>;
- 		vcc-supply = <&vcc_1v8>;
-@@ -641,15 +645,27 @@ flash@0 {
+ 	};
  };
  
  &tsadc {
@@ -701,7 +699,7 @@ index 887c9be1b410..05925c26d1e2 100644
  };
  
  &uart2 {
-@@ -665,7 +681,6 @@ &usb_host0_ohci {
+@@ -664,7 +680,6 @@
  };
  
  &usb_host0_xhci {
@@ -709,7 +707,7 @@ index 887c9be1b410..05925c26d1e2 100644
  	status = "okay";
  };
  
-@@ -690,11 +705,6 @@ &usb2phy0_host {
+@@ -689,11 +704,6 @@
  	status = "okay";
  };
  
@@ -721,7 +719,7 @@ index 887c9be1b410..05925c26d1e2 100644
  &usb2phy1 {
  	status = "okay";
  };
-@@ -705,7 +715,7 @@ &usb2phy1_host {
+@@ -704,7 +714,7 @@
  };
  
  &usb2phy1_otg {
