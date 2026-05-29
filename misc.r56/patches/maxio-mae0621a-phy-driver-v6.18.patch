@@ -1,0 +1,37 @@
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index 41b270a48630..76f88e1062b8 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -7809,6 +7809,7 @@ int stmmac_suspend(struct device *dev)
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(stmmac_suspend);
++#define MAXIO_PHY_MAE0621A_ID 0x7b744411
+ 
+ static void stmmac_reset_rx_queue(struct stmmac_priv *priv, u32 queue)
+ {
+@@ -7908,6 +7909,12 @@ int stmmac_resume(struct device *dev)
+ 	stmmac_free_tx_skbufs(priv);
+ 	stmmac_clear_descriptors(priv, &priv->dma_conf);
+ 
++
++	if (ndev->phydev->drv->config_init) {
++		if (ndev->phydev->phy_id == MAXIO_PHY_MAE0621A_ID)
++			ndev->phydev->drv->config_init(ndev->phydev);
++	}
++
+ 	ret = stmmac_hw_setup(ndev);
+ 	if (ret < 0) {
+ 		netdev_err(priv->dev, "%s: Hw setup failed\n", __func__);
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 76e0db40f879..a38c0375b806 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -91,6 +91,7 @@ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
+ obj-y				+= qcom/
+ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek/
++obj-$(CONFIG_MAXIO_PHY) 	+= maxio.o
+ obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
+ obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
+ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
