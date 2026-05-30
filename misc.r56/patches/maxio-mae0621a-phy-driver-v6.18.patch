@@ -75,7 +75,7 @@ new file mode 100755
 index 0000000000000..fd227e86794f5
 --- /dev/null
 +++ b/drivers/net/phy/maxio.c
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,260 @@
 +/*
 + * drivers/net/phy/maxio.c
 + *
@@ -222,7 +222,7 @@ index 0000000000000..fd227e86794f5
 +	struct device *dev = &phydev->mdio.dev;
 +	u16 val;
 +	int ret;
-+	u32 broken = 0;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(broken);
 +
 +	maxio_mae0621a_clk_init(phydev);
 +
@@ -230,9 +230,15 @@ index 0000000000000..fd227e86794f5
 +	printk("eee value: 0x%x \n",maxio_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV));
 +	maxio_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
 +	printk("eee value: 0x%x \n",maxio_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV));
-+	broken |= MDIO_EEE_100TX;
-+	broken |= MDIO_EEE_1000T;
-+	phydev->eee_broken_modes = broken;
++
++	// zero initialize temp mask
++	linkmode_zero(broken);
++
++	// convert mmd register bits into kernel linkmode format
++	mii_eee_cap1_mod_linkmode_t(broken, MDIO_EEE_100TX | MDIO_EEE_1000T);
++
++	// copy prepared link mask into the phydev array
++	linkmode_copy(phydev->eee_disabled_modes, broken);
 +
 +	//enable auto_speed_down
 +	ret = maxio_write_paged(phydev, 0xd8f, 0x0, 0x300 );
