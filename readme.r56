@@ -6,18 +6,9 @@
 # - /compile/doc/kernel-extra-patches - https://github.com/hexdump0815/kernel-extra-patches
 # name: stb-r56 - rockchip rk356x
 
-# # info: based on warpme minimyth2 patches from https://github.com/warpme/minimyth2
-# #       at commit ebde095d4cac6809cf9e156ce636e14402fdd9d4 (linux-6.12 subdir)
-
 cd /compile/source/linux-stable-r56
 
-# # patches:
-# # add rk356x from minimyth2
-# for i in /compile/doc/stable-rk/misc.r56/patches/minimyth2/*.patch; do
-#   echo === $i
-#   patch -p1 < $i
-# done
-
+# patches:
 # add some own dtb files
 cp -v /compile/doc/stable-rk/misc.r56/dtb/*.dts arch/arm64/boot/dts/rockchip
 cp -v /compile/doc/stable-rk/misc.r56/dtb/*.dtsi arch/arm64/boot/dts/rockchip
