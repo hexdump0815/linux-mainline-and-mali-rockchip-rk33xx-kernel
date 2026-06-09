@@ -6,6 +6,8 @@
 /* based on: https://github.com/paolosabatino/armbian-build/blob/rk3318/patch/kernel/rockchip64-dev/zzz-0006-add-rk3318-box.patch */
 
 /dts-v1/;
+#include "dt-bindings/pwm/pwm.h"
+#include "dt-bindings/input/input.h"
 #include "rk3328.dtsi"
 
 / {
@@ -26,7 +28,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		tee@0x8400000 {
+		tee@8400000 {
 			reg = <0x0 0x8400000 0x0 0x2400000>;
 			no-map;
 		};
@@ -157,9 +159,8 @@
 
 	vdd_arm: vdd-arm {
 		compatible = "pwm-regulator";
-		rockchip,pwm_id = <0>;
-		rockchip,pwm_voltage = <1100000>;
-		pwms = <&pwm0 0 5000 1>;
+		pwms = <&pwm0 0 5000 PWM_POLARITY_INVERTED>;
+		pwm-supply = <&vcc_sys>;
 		regulator-name = "vdd_arm";
 		regulator-min-microvolt = <950000>;
 		regulator-max-microvolt = <1500000>;
@@ -167,14 +168,12 @@
 		regulator-settling-time-up-us = <250>;
 		regulator-always-on;
 		regulator-boot-on;
-		vin-supply = <&vcc_sys>;
 	};
 
 	vdd_logic: vdd-log {
 		compatible = "pwm-regulator";
-		rockchip,pwm_id = <1>;
-		rockchip,pwm_voltage = <1200000>;
-		pwms = <&pwm1 0 5000 1>;
+		pwms = <&pwm1 0 5000 PWM_POLARITY_INVERTED>;
+		pwm-supply = <&vcc_sys>;
 		regulator-name = "vdd_log";
 		regulator-min-microvolt = <900000>;
 		regulator-max-microvolt = <1300000>;
@@ -182,7 +181,6 @@
 		regulator-settling-time-up-us = <250>;
 		regulator-always-on;
 		regulator-boot-on;
-		vin-supply = <&vcc_sys>;
 	};
 
 	leds {
@@ -645,7 +643,9 @@
 	status = "okay";
 };
 
-/* adjusted opp table to use slightly (50mv) higher voltages and disable the clocks higher than 1.3ghz */
+/* adjusted opp table with disabled clocks (only available in
+   turbo mode) higher than 1ghz and add a potential 1.1ghz clock
+   for the rk3318 - in general use slightly (50mv) higher voltages */
 &cpu0_opp_table {
 	opp-408000000 {
 		opp-microvolt = <1000000>;
@@ -669,10 +669,12 @@
 	opp-1200000000 {
 		opp-microvolt = <1275000>;
 		status = "okay";
+		turbo-mode;
 	};
 	opp-1296000000 {
 		opp-microvolt = <1375000>;
 		status = "okay";
+		turbo-mode;
 	};
 	opp-1392000000 {
 		opp-hz = /bits/ 64 <1392000000>;

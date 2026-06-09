@@ -1,0 +1,18 @@
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index ad684e3831bc..93e41790d0e7 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -205,6 +205,13 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-orangepi-5b.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-roc-pc.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-rock-5a.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-rock-5c.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-box.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-box-25mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-box-50mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-tanix-tx66.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-tanix-tx66-25mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-tanix-tx66-50mv.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-h96-tvbox.dtb
+ 
+ # Overlay application tests
+ #

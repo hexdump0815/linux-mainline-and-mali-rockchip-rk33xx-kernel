@@ -25,7 +25,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		tee@0x8400000 {
+		tee@8400000 {
 			reg = <0x0 0x8400000 0x0 0x2400000>;
 			no-map;
 		};
