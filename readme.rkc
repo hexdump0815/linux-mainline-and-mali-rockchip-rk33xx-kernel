@@ -33,8 +33,8 @@ patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/usb-dwc3-disable-park-mode-e
 #patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-mali-gpu-opp-table.patch
 # add some more hdmi mode timings
 patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/general-add-pll-hdmi-timings-v6.6.patch
-# add a hw cursor plane
-patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane-v6.12.patch
+# add a hw cursor plane - TODO: does not compile with v7.3
+#patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3328-hw-cursor-plane-v6.12.patch
 # get rid of mmc errors, emmc/sd disk corruption and wifi problems
 # TODO: adjustment to v6.12 still required
 # patch -p1 < /compile/doc/stable-rk/misc.rkc/patches/rk3399-sd-drive-level-8ma.patch
